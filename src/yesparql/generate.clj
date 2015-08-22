@@ -50,7 +50,7 @@
             (assert connection (connection-error name))
             (handler-fn connection statement call-options)))
         [display-args generated-fn]
-        (let [global-args {:keys ['connection]}]
+        (let [global-args {:keys ['connection 'bindings]}]
           [(list [] [global-args])
            (fn query-wrapper-fn
              ([] (query-wrapper-fn {}))
