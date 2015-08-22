@@ -46,7 +46,10 @@
   "yesparql/samples/select-bindings.sparql"
   {:connection tdb})
 
-(sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
+(expect {:type "literal", :value "A default book"}
+        (:title (first (get-in
+                        (sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
+                        [:results :bindings]))))
 
 ;; Test remote SPARQL endpoints
 
