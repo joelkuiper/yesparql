@@ -79,7 +79,6 @@
 (defmethod update-exec DatasetGraph [data-set update]
   (UpdateExecutionFactory/create update ^DatasetGraph data-set))
 
-
 (defn update
   ([data-set updates]
    (let [^UpdateRequest update-request (UpdateFactory/create)]
@@ -114,6 +113,7 @@
 (defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
 (defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
 (defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
+(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
 (defn result->clj
   [^ResultSet result]

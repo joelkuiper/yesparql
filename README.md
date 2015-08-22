@@ -138,6 +138,8 @@ See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-outp
 ## TODO
 - TDB Text API (with Lucene)
 - Better support for various binding types (prefixes, RDFNode, etc)
+- Authentication support for SPARQL Endpoints
+- Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 - More tests
 - Better docstrings
 
