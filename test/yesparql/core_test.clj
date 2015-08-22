@@ -41,6 +41,7 @@
 
 (expect true (not (nil? (sparql/model->json-ld (construct-books)))))
 
+(expect true (not (nil? (sparql/model->rdf+xml (sparql/result->model (select-all))))))
 
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"

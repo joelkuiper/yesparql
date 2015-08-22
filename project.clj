@@ -20,5 +20,6 @@
                  [cheshire "5.3.1"]
 
                  [org.apache.jena/jena-arq "3.0.0"]
+                 [org.apache.jena/jena-text "3.0.0"]
                  [org.apache.jena/jena-core "3.0.0"]
                  [org.apache.jena/jena-querybuilder "3.0.0"]])
