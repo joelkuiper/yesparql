@@ -1,0 +1,8 @@
+-- Default query selecting 25 triples
+
+
+SELECT ?subject ?predicate ?object
+WHERE {
+  ?subject ?predicate ?object
+}
+LIMIT 25

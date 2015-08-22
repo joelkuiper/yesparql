@@ -45,20 +45,16 @@
   (let [handler-fn (statement-handler name)
         global-connection (:connection query-options)
         real-fn
-        (fn [args call-options]
+        (fn [call-options]
           (let [connection (or (:connection call-options) global-connection)]
             (assert connection (connection-error name))
             (handler-fn connection statement call-options)))
         [display-args generated-fn]
         (let [global-args {:keys ['connection]}]
-          (if global-connection
-            [(list [] [global-args])
-             (fn query-wrapper-fn
-               ([] (query-wrapper-fn {} {}))
-               ([args call-options] (real-fn args call-options)))]
-            [(list [global-args])
-             (fn query-wrapper-fn
-               ([args call-options] (real-fn args call-options)))]))]
+          [(list [] [global-args])
+           (fn query-wrapper-fn
+             ([] (query-wrapper-fn {}))
+             ([call-options] (real-fn call-options)))])]
 
     (with-meta generated-fn
       (merge {:name name

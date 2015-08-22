@@ -12,6 +12,7 @@
     RDFNode Resource Literal]
    [org.apache.jena.query Dataset]
    [org.apache.jena.sparql.core DatasetGraph]
+   [org.apache.jena.sparql.resultset RDFOutput]
    [org.apache.jena.query
     Query QuerySolution QueryExecution
     QueryExecutionFactory QueryFactory QuerySolutionMap
@@ -97,25 +98,30 @@
 ;; Convert ResultSet
 (defn result->json
   [^ResultSet result]
-  (let [^java.io.OutputStream out (output-stream)]
+  (with-open [^java.io.OutputStream out (output-stream)]
     (ResultSetFormatter/outputAsJSON out result)
     (str out)))
 
 (defn result->csv
   [^ResultSet result]
-  (let [^java.io.OutputStream out (output-stream)]
+  (with-open [^java.io.OutputStream out (output-stream)]
     (ResultSetFormatter/outputAsCSV out result)
     (str out)))
 
 (defn result->xml
   [^ResultSet result]
-  (let [^java.io.OutputStream out (output-stream)]
+  (with-open [^java.io.OutputStream out (output-stream)]
     (ResultSetFormatter/outputAsXML out result)
     (str out)))
 
 (defn result->clj
   [^ResultSet result]
   (json/decode (result->json result) true))
+
+(defn result->model
+  [^ResultSet result]
+  (let [^RDFOutput rdf (RDFOutput.)]
+    (.asModel rdf result)))
 
 ;; Convert model
 (defn serialize-model

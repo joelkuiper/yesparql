@@ -1,0 +1,3 @@
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+
+ASK  { <http://example/book0> dc:title "A default book" }

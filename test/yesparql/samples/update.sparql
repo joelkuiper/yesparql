@@ -1,10 +1,10 @@
 -- Simple update with some books
 
-PREFIX dc: <http://marklogic.com/dc/elements/1.1/>
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
 INSERT DATA
 {
-  <http://example/book0> dc:title "A default book"
-  GRAPH <BOOKS> {<http://example/book1> dc:title "A new book" }
-  GRAPH <BOOKS> {<http://example/book2> dc:title "A second book" }
-  GRAPH <BOOKS> {<http://example/book3> dc:title "A third book" }
+  <http://example/book0> dc:title "A default book" .
+  <http://example/book1> dc:title "A new book" .
+  <http://example/book2> dc:title "A second book" .
+  <http://example/book3> dc:title "A third book" .
  }

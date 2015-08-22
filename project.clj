@@ -1,4 +1,4 @@
-(defproject yesparql "0.1.0-SNAPSHOT"
+(defproject yesparql "0.1.0"
   :description "YESPARQL, a YESQL inspired SPARQL library"
   :url "http://github.com/joelkuiper/yesparql"
   :license {:name "Eclipse Public License"
@@ -20,5 +20,6 @@
                  [cheshire "5.3.1"]
 
                  [org.apache.jena/jena-arq "3.0.0"]
+                 [org.apache.jena/jena-text "3.0.0"]
                  [org.apache.jena/jena-core "3.0.0"]
                  [org.apache.jena/jena-querybuilder "3.0.0"]])
