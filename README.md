@@ -53,8 +53,8 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```clojure
 (require '[yesparql.core :refer [defquery]])
 
-
-; Import the SPARQL query as a function. In this case we use DBPedia as a remote endpoint
+;; Import the SPARQL query as a function.
+;; In this case we use DBPedia as a remote endpoint
 (defquery select-intellectuals "some/where/dbpedia-select.sql"
   {:connection "http://dbpedia.org/sparql"})
 ```
