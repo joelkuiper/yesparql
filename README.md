@@ -128,9 +128,9 @@ YeSPARQL offers various functions to transform these types to other serializatio
 ;; ASK returns a boolean, as expected
 
 (def model (sparql/result->model result))
-(sparql/model->json-ld result)
-(sparql/model->rdf+xml result)
-(sparql/model->ttl result)
+(sparql/model->json-ld model)
+(sparql/model->rdf+xml model)
+(sparql/model->ttl model)
 
 (serialize-model model format)
 ```
