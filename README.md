@@ -7,7 +7,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.1.0"]
+[yesparql "0.1.2"]
 ```
 
 ## What's the point?
@@ -19,7 +19,7 @@ Other perks include:
 - Better editor support.
 - Team interoperability. Your DBAs can read and write the SPARQL you
   use in your Clojure project.
-- Easier performance tuning. It's much easier when your query is ordinary SQL.
+- Easier performance tuning. It's much easier when your query is ordinary SPARQL.
 - Query reuse. Drop the same SPARQL files into other projects, because
   they're just plain ol' SPARQL. Share them as a submodule.
 
@@ -54,7 +54,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 (require '[yesparql.core :refer [defquery]])
 
 
-; Import the SQL query as a function. In this case we use DBPedia as a remote endpoint
+; Import the SPARQL query as a function. In this case we use DBPedia as a remote endpoint
 (defquery select-intellectuals "some/where/dbpedia-select.sql"
   {:connection "http://dbpedia.org/sparql"})
 ```
@@ -131,8 +131,10 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (sparql/model->json-ld result)
 (sparql/model->rdf+xml result)
 (sparql/model->ttl result)
-```
 
+(serialize-model model format)
+```
+See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
 ## TODO
 - TDB Text API (with Lucene)
