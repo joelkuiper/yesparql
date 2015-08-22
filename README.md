@@ -10,9 +10,9 @@ Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:depende
 [yesparql "0.1.0"]
 ```
 
-## What's the point
+## What's the point?
 [YESQL](https://github.com/krisajenkins/yesql) does a much better job explaining this. But in short, it's annoying to write SPARQL in Clojure.
-While you could design some DSL, these are often lacking in expressiveness and have nasty corner cases; so why not *just* use SPARQL.
+While you could design some DSL, these are often lacking in expressiveness and have nasty corner cases; so why not *just use SPARQL*.
 By defining the queries as simple SPARQL in separate files, you get a clean separation of concerns without polluting your code with long queries.
 Other perks include:
 
@@ -24,7 +24,7 @@ Other perks include:
   they're just plain ol' SPARQL. Share them as a submodule.
 
 
-## Eeh, I meant what's the point of SPARQL
+## Eeh, I meant what's the point of SPARQL?
 See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web)
 
 ## Usage
@@ -51,7 +51,7 @@ SELECT DISTINCT ?person {
 Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ```clojure
-(require '[yesql.core :refer [defquery]])
+(require '[yesparql.core :refer [defquery]])
 
 
 ; Import the SQL query as a function. In this case we use DBPedia as a remote endpoint
@@ -73,11 +73,24 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 You can supply default(/initial) bindings as a map of strings (the names) to `URI`, `URL`, `RDFNode`, `Node`, or literals (default).
 
 ```clojure
-(select-intellectuals {:bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1942_deaths")}})
+(select-intellectuals
+ {:bindings
+  {"subject" (URI. "http://dbpedia.org/resource/Category:1942_deaths")}})
 ```
 
-In addition to supplying a SPARQL Endpoint URL you can also supply a TDB `Dataset`.
+In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
 The `yesparq.tdb` namespace provides convenience methods for constructing these.
+
+```clojure
+(require '[yesparql.tdb :as tdb])
+
+(def tdb (tdb/create-in-memory))
+
+(defquery select-all
+  "yesparql/samples/select.sparql"
+  {:connection tdb})
+
+```
 
 ### One file, Many Queries
 [Same as Yesql](https://github.com/krisajenkins/yesql#one-file-many-queries)
@@ -85,14 +98,14 @@ The `yesparq.tdb` namespace provides convenience methods for constructing these.
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
-- Any name starting with `select` (e.g. select-intellectuals) performs a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
-- Any name starting with `update` or ending with `!`  performs a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
-- Any name starting with `ask` or ending with `?`  performs a [SPARQL ASK](http://www.w3.org/TR/rdf-sparql-query/#ask)
-- Any name staring with `construct` performs a [SPARQL CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct)
-- Any name staring with `describe` performs a [SPARQL DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe)
+- Names starting with `select` (e.g. select-intellectuals) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
+- Names starting with `update` or ending with `!`  perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
+- Names starting with `ask` or ending with `?`  perform a [SPARQL ASK](http://www.w3.org/TR/rdf-sparql-query/#ask)
+- Names starting with `construct` perform a [SPARQL CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct)
+- Names starting with `describe` perform a [SPARQL DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe)
 
 ### Results processing
-By default each of the executed queries returns its native [Apace Jena](https://jena.apache.org/) [ResultSet](https://jena.apache.org/documentation/javadoc/arq/) or [Model](https://jena.apache.org/documentation/javadoc/jena/) (depending on the type of query).
+Each of the executed queries returns its native [Apace Jena](https://jena.apache.org/) [ResultSet](https://jena.apache.org/documentation/javadoc/arq/) or [Model](https://jena.apache.org/documentation/javadoc/jena/) (depending on the type of query).
 
 YeSPARQL offers various functions to transform these types to other serializations in the `yesparql.sparql` namespace.
 
@@ -107,8 +120,11 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (sparql/result->csv result)
 (sparql/result->xml result) ; NOT RDF, but the SPARQL RDF Result format
 
-;; Only models can converted to RDF serializations, a result->model function is provided
+;; Only models can converted to RDF serializations,
+;; You can use rdf->model to convert a ResultSet
+
 ;; CONSTRUCT queries will return a model natively, so no conversion is required.
+
 ;; ASK returns a boolean, as expected
 
 (def model (sparql/result->model result))
