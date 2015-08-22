@@ -79,7 +79,7 @@ You can supply default(/initial) bindings as a map of strings (the names) to `UR
 ```
 
 In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
-The `yesparq.tdb` namespace provides convenience methods for constructing these.
+The `yesparql.tdb` namespace provides convenience methods for constructing these.
 
 ```clojure
 (require '[yesparql.tdb :as tdb])
