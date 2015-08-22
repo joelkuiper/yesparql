@@ -125,9 +125,9 @@
 
 ;; Convert model
 (defn serialize-model
-  [^Model model ^String lang]
+  [^Model model ^String format]
   (with-open [w (java.io.StringWriter.)]
-    (.write model w lang)
+    (.write model w format)
     (str w)))
 
 (defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
