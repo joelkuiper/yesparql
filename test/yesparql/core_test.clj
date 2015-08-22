@@ -1,21 +1,52 @@
 (ns yesparql.core-test
+  (:import [java.net URI URL URLEncoder])
   (:require [clojure.string :refer [upper-case]]
             [expectations :refer :all]
 
-            [yesparql.jena :as jena]
+            [yesparql.tdb :as tdb]
             [yesparql.sparql :as sparql]
             [yesparql.core :refer :all]))
 
 ;; Test in-memory SPARQL
 
+(defn triple-count
+  [results]
+  (count (get-in (sparql/result->clj results) [:results :bindings])))
 
-(def tdb (jena/create-in-mem-tdb))
+(def tdb (tdb/create-bare))
 
-(defquery update-with-books
+
+(defquery select-all
+  "yesparql/samples/select.sparql"
+  {:connection tdb})
+
+(defquery update-books
   "yesparql/samples/update.sparql"
   {:connection tdb})
 
+(defquery ask-book
+  "yesparql/samples/ask.sparql"
+  {:connection tdb})
 
+(defquery construct-books
+  "yesparql/samples/construct.sparql"
+  {:connection tdb})
+
+
+;; With 4 books
+(update-books)
+(expect 4 (triple-count (select-all)))
+
+(expect true (ask-book))
+
+(expect true (not (nil? (sparql/model->json-ld (construct-books)))))
+
+
+(defquery select-book
+  "yesparql/samples/select-bindings.sparql"
+  {:connection tdb})
+
+(sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
 
 ;; Test remote SPARQL endpoints
 
@@ -23,8 +54,4 @@
   "yesparql/samples/remote-query.sparql"
   {:connection "http://dbpedia.org/sparql"})
 
-
-(expect 10
-        (count (get-in
-                (sparql/result->clj (dbpedia-select))
-                [:results :bindings])))
+(expect 10 (triple-count (dbpedia-select)))
