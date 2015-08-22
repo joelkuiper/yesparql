@@ -138,6 +138,7 @@ YeSPARQL offers various functions to transform these types to other serializatio
 - TDB Text API (with Lucene)
 - Better support for various binding types (prefixes, RDFNode, etc)
 - More tests
+- Better docstrings
 
 ## Acknowledgments
 [Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
