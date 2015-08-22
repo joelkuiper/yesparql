@@ -1,6 +1,6 @@
 # YeSPARQL
 
-YESPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query/) queries against endpoints or [TDB stores](https://jena.apache.org/documentation/tdb/index.html), heavily influenced by [YESQL](https://github.com/krisajenkins/yesql).
+YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query/) queries against endpoints or [TDB stores](https://jena.apache.org/documentation/tdb/index.html), heavily influenced by [Yesql](https://github.com/krisajenkins/yesql).
 
 
 ## Installation
@@ -11,7 +11,7 @@ Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:depende
 ```
 
 ## What's the point?
-[YESQL](https://github.com/krisajenkins/yesql) does a much better job explaining this. But in short, it's annoying to write SPARQL in Clojure.
+[Yesql](https://github.com/krisajenkins/yesql) does a much better job explaining this. But in short, it's annoying to write SPARQL in Clojure.
 While you could design some DSL, these are often lacking in expressiveness and have nasty corner cases; so why not *just use SPARQL*.
 By defining the queries as simple SPARQL in separate files, you get a clean separation of concerns without polluting your code with long queries.
 Other perks include:
