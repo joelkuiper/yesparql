@@ -54,7 +54,7 @@
 (defn select
   [data-set ^String query bindings]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (ResultSetFactory/copyResults (.execSelect q))))
+    (ResultSetFactory/makeRewindable (.execSelect q))))
 
 (defn construct
   [data-set ^String query bindings]
@@ -95,13 +95,20 @@
 (defn output-stream []
   (java.io.ByteArrayOutputStream.))
 
+(defn- reset-if-rewindable!
+  [result]
+  (when (instance? org.apache.jena.query.ResultSetRewindable result)
+    (.reset result)))
+
 ;; Serialize ResultSet
 (defmacro serialize-result
   [method result]
   `(let [output# (output-stream)]
      (try
-       (do (~method ^java.io.OutputStream output# ^ResultSet ~result)
-           (str output#))
+       (do
+         (reset-if-rewindable! ~result)
+         (~method ^java.io.OutputStream output# ^ResultSet ~result)
+         (str output#))
        (finally (.close output#)))))
 
 (defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
@@ -115,6 +122,7 @@
 (defn result->model
   [^ResultSet result]
   (let [^RDFOutput rdf (RDFOutput.)]
+    (reset-if-rewindable! result)
     (.asModel rdf result)))
 
 ;; Serialize model
