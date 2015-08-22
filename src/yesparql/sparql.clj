@@ -95,24 +95,18 @@
 (defn output-stream []
   (java.io.ByteArrayOutputStream.))
 
-;; Convert ResultSet
-(defn result->json
-  [^ResultSet result]
-  (with-open [^java.io.OutputStream out (output-stream)]
-    (ResultSetFormatter/outputAsJSON out result)
-    (str out)))
+;; Serialize ResultSet
+(defmacro serialize-result
+  [method result]
+  `(let [output# (output-stream)]
+     (try
+       (do (~method ^java.io.OutputStream output# ^ResultSet ~result)
+           (str output#))
+       (finally (.close output#)))))
 
-(defn result->csv
-  [^ResultSet result]
-  (with-open [^java.io.OutputStream out (output-stream)]
-    (ResultSetFormatter/outputAsCSV out result)
-    (str out)))
-
-(defn result->xml
-  [^ResultSet result]
-  (with-open [^java.io.OutputStream out (output-stream)]
-    (ResultSetFormatter/outputAsXML out result)
-    (str out)))
+(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
+(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
+(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
 
 (defn result->clj
   [^ResultSet result]
@@ -123,7 +117,7 @@
   (let [^RDFOutput rdf (RDFOutput.)]
     (.asModel rdf result)))
 
-;; Convert model
+;; Serialize model
 (defn serialize-model
   [^Model model ^String format]
   (with-open [w (java.io.StringWriter.)]
