@@ -20,6 +20,11 @@
     ResultSetFactory ResultSet ResultSetFormatter]))
 
 (defn query-with-bindings
+  "The `query` string will be formatted as a `ParameterizedSparqlString`
+   and can be provided with a map of `bindings`.
+   Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
+   Any other type (e.g. strings, float) will be set as literal.
+   Does not warn if setting a non-existing binding. "
   [query bindings]
   (let [pq (ParameterizedSparqlString. ^String query)]
     (doall
@@ -52,21 +57,36 @@
 (defmethod query-exec Model [data-set query bindings] (exec* data-set query bindings))
 
 (defn select
+  "Execute a SPARQL SELECT `query` against the `data-set`, returning a
+  `ResultSet`. `bindings` will be substituted when possible, can be
+  empty. `data-set` can be a String for a SPARQL endpoint URL or
+  `Dataset`"
   [data-set ^String query bindings]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (ResultSetFactory/makeRewindable (.execSelect q))))
 
 (defn construct
+  "Execute a SPARQL CONSTRUCT `query` against the `data-set`,
+  returning a `Model`. `bindings` will be substituted when possible,
+  can be empty. `data-set` can be a String for a SPARQL endpoint URL
+  or `Dataset`"
   [data-set ^String query bindings]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (.execConstruct q)))
 
 (defn describe
+  "Execute a SPARQL DESCRIBE `query` against the `data-set`, returning
+  a `Model`. `bindings` will be substituted when possible, can be
+  empty. `data-set` can be a String for a SPARQL endpoint URL or
+  `Dataset`"
   [data-set ^String query bindings]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (.execDescribe q)))
 
 (defn ask
+  "Execute a SPARQL ASK `query` against the `data-set`, returning a
+  boolean. `bindings` will be substituted when possible, can be empty.
+  `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
   [data-set ^String query bindings]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (.execAsk q)))
@@ -80,6 +100,10 @@
   (UpdateExecutionFactory/create update ^DatasetGraph data-set))
 
 (defn update
+  "Execute a SPARQL UPDATE `query` against the `data-set`,
+  returning nil if success, throw an exception otherwise. `bindings`
+  will be substituted when possible, can be empty.
+  `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
   ([data-set updates]
    (let [^UpdateRequest update-request (UpdateFactory/create)]
      (doseq [update updates]
