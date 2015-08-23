@@ -169,10 +169,12 @@ It's perfectly to fine to keep using the Jena objects, and use the Clojure-Java 
 
 ## New to Clojure?
 If you are new to Clojure the code might look unfamiliar.
-But, Clojure is a wonderful language, and if you are interested in learning more we recommend the following resources:
-- [[https://yogthos.github.io/ClojureDistilled.html][Clojure Distilled]]
-- [[http://www.braveclojure.com/][Clojure for the brave and true]]
-- [[https://aphyr.com/tags/Clojure-from-the-ground-up][Clojure from the ground up]]
+But, Clojure is a wonderful language, and if you are interested in learning we recommend the following resources:
+
+- [Clojure Distilled](https://yogthos.github.io/ClojureDistilled.html)
+- [Clojure for the brave and true](http://www.braveclojure.com/)
+- [Clojure from the ground up](https://aphyr.com/tags/Clojure-from-the-ground-up)
+- [The Joy of Clojure](http://www.amazon.com/Joy-Clojure-Michael-Fogus/dp/1617291412)
 
 ## Acknowledgments
 [Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
