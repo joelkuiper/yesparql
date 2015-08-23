@@ -60,18 +60,23 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 ```clojure
+;; The function is now available in the namespace
+
+;; Docstrings are automatically generated
 (clojure.repl/doc select-intellectuals)
 
 ;=> ------------------------
 ;=> yesparql.core-test/select-intellectuals
-;=> ([] [{:keys [connection]}])
+;=> ([] [{:keys [connection bindings]}])
 ;=> Example dbpedia query, returning intellectuals restricted by subject
 ;=> Endpoint: http://dbpedia.org/sparql
 
+;; Running the query is as easy as calling the function
+(select-intellectuals)
 ```
 
-You can supply default(/initial) bindings as a map of strings (the names) to `URI`, `URL`, `RDFNode`, `Node`, or literals (default).
-A complete example of running a SPARQL SELECT against DBPedia with bindings:
+In addition, you can supply default(/initial) bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
+A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
 (print
@@ -137,8 +142,8 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (sparql/result->csv result)
 (sparql/result->xml result) ; NOT RDF, but the SPARQL RDF result format
 
-;; Only models can converted to RDF serializations.
-;; You can use rdf->model to convert a ResultSet to a `Model`.
+;; Only a Model can converted to RDF serializations.
+;; You can use rdf->model to convert a ResultSet to a Model.
 ;; CONSTRUCT returns a Model, and does not need to be converted
 ;; ASK returns a boolean, as expected
 
@@ -151,6 +156,9 @@ YeSPARQL offers various functions to transform these types to other serializatio
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
+Note that it is not a primary goal to provide a full native Clojure wrapper.
+It's perfectly to fine to keep using the Jena objects, and use the Clojure-Java [interop](http://clojure.org/java_interop).
+
 ## TODO
 - TDB Text API (with Lucene)
 - Better support for various binding types (prefixes, RDFNode, etc)
@@ -158,6 +166,13 @@ See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-outp
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 - More tests
 - Better docstrings
+
+## New to Clojure?
+If you are new to Clojure the code might look unfamiliar.
+But, Clojure is a wonderful language, and if you are interested in learning more we recommend the following resources:
+- [[https://yogthos.github.io/ClojureDistilled.html][Clojure Distilled]]
+- [[http://www.braveclojure.com/][Clojure for the brave and true]]
+- [[https://aphyr.com/tags/Clojure-from-the-ground-up][Clojure from the ground up]]
 
 ## Acknowledgments
 [Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
