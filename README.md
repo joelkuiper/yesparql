@@ -1,7 +1,6 @@
 # YeSPARQL
 
 [![Build Status](https://travis-ci.org/joelkuiper/yesparql.png?branch=master)](https://travis-ci.org/joelkuiper/yesparql)
->>>>>>> develop
 
 
 YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query/) queries against endpoints or [TDB stores](https://jena.apache.org/documentation/tdb/index.html), heavily influenced by [Yesql](https://github.com/krisajenkins/yesql).
