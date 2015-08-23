@@ -81,9 +81,11 @@ You can supply default(/initial) bindings as a map of strings (the names) to `UR
 A more complete example of running a SPARQL SELECT against DBPedia
 
 ```clojure
-(print (sparql/result->csv
-        (dbpedia-select
-         {:bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+(print
+ (sparql/result->csv
+  (dbpedia-select
+   {:bindings
+    {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
 
 ;=> person
 ;=> http://dbpedia.org/resource/Bernard_Lyot
