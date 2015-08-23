@@ -78,6 +78,28 @@ You can supply default(/initial) bindings as a map of strings (the names) to `UR
   {"subject" (URI. "http://dbpedia.org/resource/Category:1942_deaths")}})
 ```
 
+A more complete example of running a SPARQL SELECT against DBPedia
+
+```clojure
+(print (sparql/result->csv
+        (dbpedia-select
+         {:bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+
+;=> person
+;=> http://dbpedia.org/resource/Bernard_Lyot
+;=> http://dbpedia.org/resource/Henry_Drysdale_Dakin
+;=> http://dbpedia.org/resource/Felix_Ehrenhaft
+;=> http://dbpedia.org/resource/T._Wayland_Vaughan
+;=> http://dbpedia.org/resource/Luigi_Puccianti
+;=> http://dbpedia.org/resource/Max_Dehn
+;=> http://dbpedia.org/resource/James_Irvine_(chemist)
+;=> http://dbpedia.org/resource/Morris_E._Leeds
+;=> http://dbpedia.org/resource/Walter_Tennyson_Swingle
+;=> http://dbpedia.org/resource/Andrew_Lawson
+```
+
+
+### TDB
 In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
 The `yesparql.tdb` namespace provides convenience methods for constructing these.
 
