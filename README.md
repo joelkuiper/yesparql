@@ -55,7 +55,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;; Import the SPARQL query as a function.
 ;; In this case we use DBPedia as a remote endpoint
-(defquery select-intellectuals "some/where/dbpedia-select.sql"
+(defquery select-intellectuals "some/where/select-intellectuals.sql"
   {:connection "http://dbpedia.org/sparql"})
 ```
 
@@ -63,7 +63,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 (clojure.repl/doc select-intellectuals)
 
 ;=> ------------------------
-;=> yesparql.core-test/dbpedia-select
+;=> yesparql.core-test/select-intellectuals
 ;=> ([] [{:keys [connection]}])
 ;=> Example dbpedia query, returning intellectuals restricted by subject
 ;=> Endpoint: http://dbpedia.org/sparql
@@ -71,7 +71,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 You can supply default(/initial) bindings as a map of strings (the names) to `URI`, `URL`, `RDFNode`, `Node`, or literals (default).
-A more complete example of running a SPARQL SELECT against DBPedia with bindings:
+A complete example of running a SPARQL SELECT against DBPedia with bindings:
 
 ```clojure
 (print
