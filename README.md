@@ -115,7 +115,7 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
-- Names starting with `select` (e.g. select-intellectuals) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
+- Names starting with `select` (e.g. `select-intellectuals`) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
 - Names starting with `update` or ending with `!`  perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
 - Names starting with `ask` or ending with `?`  perform a [SPARQL ASK](http://www.w3.org/TR/rdf-sparql-query/#ask)
 - Names starting with `construct` perform a [SPARQL CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct)
@@ -135,11 +135,10 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (sparql/result->clj result) ; converts to a Clojure map using the JSON serialization
 (sparql/result->json result)
 (sparql/result->csv result)
-(sparql/result->xml result) ; NOT RDF, but the SPARQL RDF Result format
+(sparql/result->xml result) ; NOT RDF, but the SPARQL RDF result format
 
-;; Only models can converted to RDF serializations,
-;; You can use rdf->model to convert a ResultSet
-
+;; Only models can converted to RDF serializations.
+;; You can use rdf->model to convert a ResultSet to a `Model`.
 ;; CONSTRUCT returns a Model, and does not need to be converted
 ;; ASK returns a boolean, as expected
 
