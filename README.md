@@ -167,6 +167,7 @@ It's perfectly to fine to keep using the Jena objects, and use the Clojure-Java 
 If you are new to Clojure the code might look unfamiliar.
 But, Clojure is a wonderful language, and if you are interested in learning we recommend the following resources:
 
+- [Parens of the Dead](http://www.parens-of-the-dead.com/)
 - [Clojure Distilled](https://yogthos.github.io/ClojureDistilled.html)
 - [Clojure for the brave and true](http://www.braveclojure.com/)
 - [Clojure from the ground up](https://aphyr.com/tags/Clojure-from-the-ground-up)
