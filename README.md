@@ -146,7 +146,7 @@ YeSPARQL offers various functions to transform these types to other serializatio
 
 ;; Only a Model can converted to RDF serializations.
 ;; You can use result->model to convert a ResultSet to a Model.
-;; CONSTRUCT and DESCRIBE return a Model, and does not need to be converted
+;; CONSTRUCT and DESCRIBE return a Model, and do not need to be converted
 ;; ASK returns a boolean, as expected
 
 (def model (sparql/result->model result))
