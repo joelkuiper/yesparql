@@ -57,11 +57,8 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ;; In this case we use DBPedia as a remote endpoint
 (defquery select-intellectuals "some/where/select-intellectuals.sql"
   {:connection "http://dbpedia.org/sparql"})
-```
 
-```clojure
 ;; The function is now available in the namespace
-
 ;; Docstrings are automatically generated
 (clojure.repl/doc select-intellectuals)
 
@@ -75,7 +72,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 (select-intellectuals)
 ```
 
-In addition, you can supply default(/initial) bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
+In addition, you can supply bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
@@ -97,7 +94,6 @@ A complete example of running a SPARQL SELECT against DBPedia, with initial bind
 ;=> http://dbpedia.org/resource/Walter_Tennyson_Swingle
 ;=> http://dbpedia.org/resource/Andrew_Lawson
 ```
-
 
 ### TDB
 In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
