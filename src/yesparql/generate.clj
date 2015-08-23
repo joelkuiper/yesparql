@@ -51,7 +51,7 @@
             (handler-fn connection statement call-options)))
         [display-args generated-fn]
         (let [global-args {:keys ['connection 'bindings]}]
-          [(list [global-args])
+          [(list [] [global-args])
            (fn query-wrapper-fn
              ([] (query-wrapper-fn {}))
              ([call-options] (real-fn call-options)))])]

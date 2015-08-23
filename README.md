@@ -64,7 +64,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;=> ------------------------
 ;=> yesparql.core-test/select-intellectuals
-;=> ([{:keys [connection bindings]}])
+;=> ([] [{:keys [connection bindings]}])
 ;=> Example dbpedia query, returning intellectuals restricted by subject
 ;=> Endpoint: http://dbpedia.org/sparql
 
