@@ -60,4 +60,4 @@
 
 (expect 10
         (triple-count
-         (dbpedia-select {:bindings {"subject" (URI. "dbpedia-resource:Category:1942_deaths")}})))
+         (dbpedia-select {:bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
