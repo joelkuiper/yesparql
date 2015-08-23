@@ -73,7 +73,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 In addition, you can supply bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
-These bindings get inserted into the query using [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
+These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
@@ -154,7 +154,7 @@ YeSPARQL offers various functions to transform these types to other serializatio
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
 Note that it is not a primary goal to provide a full native Clojure wrapper.
-It's perfectly to fine to keep using the Jena objects, and use the Clojure-Java [interop](http://clojure.org/java_interop).
+It's perfectly to fine to keep using the Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
 
 ## TODO
 - TDB Text API (with Lucene)
