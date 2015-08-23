@@ -60,7 +60,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 ```clojure
-(clojure.repl/doc select-intelectuals)
+(clojure.repl/doc select-intellectuals)
 
 ;=> ------------------------
 ;=> yesparql.core-test/dbpedia-select
@@ -76,7 +76,7 @@ A more complete example of running a SPARQL SELECT against DBPedia with bindings
 ```clojure
 (print
  (sparql/result->csv
-  (dbpedia-select
+  (select-intellectuals
    {:bindings
     {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
 
