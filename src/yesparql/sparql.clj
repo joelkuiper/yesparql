@@ -86,7 +86,7 @@
        (.add update-request ^String update))
      (.execute (update-exec data-set update-request))))
   ([data-set ^String query bindings]
-   (let [q (.toString (query-with-bindings query bindings))
+   (let [q (.toString (.asUpdate (query-with-bindings query bindings)))
          ^UpdateRequest update-request (UpdateFactory/create q)
          ^UpdateProcessor processor (update-exec data-set update-request)]
      (.execute processor))))
