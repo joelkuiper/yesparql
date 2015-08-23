@@ -73,6 +73,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 In addition, you can supply bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
+These bindings get inserted into the query using [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
