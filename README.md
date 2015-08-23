@@ -7,7 +7,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.1.2"]
+[yesparql "0.1.4"]
 ```
 
 ## What's the point?
@@ -55,15 +55,15 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;; Import the SPARQL query as a function.
 ;; In this case we use DBPedia as a remote endpoint
-(defquery select-intellectuals "some/where/dbpedia-select.sql"
+(defquery select-intellectuals "some/where/select-intellectuals.sql"
   {:connection "http://dbpedia.org/sparql"})
 ```
 
 ```clojure
-(clojure.repl/doc select-intelectuals)
+(clojure.repl/doc select-intellectuals)
 
 ;=> ------------------------
-;=> yesparql.core-test/dbpedia-select
+;=> yesparql.core-test/select-intellectuals
 ;=> ([] [{:keys [connection]}])
 ;=> Example dbpedia query, returning intellectuals restricted by subject
 ;=> Endpoint: http://dbpedia.org/sparql
@@ -71,13 +71,30 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 You can supply default(/initial) bindings as a map of strings (the names) to `URI`, `URL`, `RDFNode`, `Node`, or literals (default).
+A complete example of running a SPARQL SELECT against DBPedia with bindings:
 
 ```clojure
-(select-intellectuals
- {:bindings
-  {"subject" (URI. "http://dbpedia.org/resource/Category:1942_deaths")}})
+(print
+ (sparql/result->csv
+  (select-intellectuals
+   {:bindings
+    {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+
+;=> person
+;=> http://dbpedia.org/resource/Bernard_Lyot
+;=> http://dbpedia.org/resource/Henry_Drysdale_Dakin
+;=> http://dbpedia.org/resource/Felix_Ehrenhaft
+;=> http://dbpedia.org/resource/T._Wayland_Vaughan
+;=> http://dbpedia.org/resource/Luigi_Puccianti
+;=> http://dbpedia.org/resource/Max_Dehn
+;=> http://dbpedia.org/resource/James_Irvine_(chemist)
+;=> http://dbpedia.org/resource/Morris_E._Leeds
+;=> http://dbpedia.org/resource/Walter_Tennyson_Swingle
+;=> http://dbpedia.org/resource/Andrew_Lawson
 ```
 
+
+### TDB
 In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
 The `yesparql.tdb` namespace provides convenience methods for constructing these.
 
@@ -98,7 +115,7 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
-- Names starting with `select` (e.g. select-intellectuals) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
+- Names starting with `select` (e.g. `select-intellectuals`) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
 - Names starting with `update` or ending with `!`  perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
 - Names starting with `ask` or ending with `?`  perform a [SPARQL ASK](http://www.w3.org/TR/rdf-sparql-query/#ask)
 - Names starting with `construct` perform a [SPARQL CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct)
@@ -118,13 +135,11 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (sparql/result->clj result) ; converts to a Clojure map using the JSON serialization
 (sparql/result->json result)
 (sparql/result->csv result)
-(sparql/result->xml result) ; NOT RDF, but the SPARQL RDF Result format
+(sparql/result->xml result) ; NOT RDF, but the SPARQL RDF result format
 
-;; Only models can converted to RDF serializations,
-;; You can use rdf->model to convert a ResultSet
-
-;; CONSTRUCT queries will return a model natively, so no conversion is required.
-
+;; Only models can converted to RDF serializations.
+;; You can use rdf->model to convert a ResultSet to a `Model`.
+;; CONSTRUCT returns a Model, and does not need to be converted
 ;; ASK returns a boolean, as expected
 
 (def model (sparql/result->model result))
@@ -139,6 +154,8 @@ See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-outp
 ## TODO
 - TDB Text API (with Lucene)
 - Better support for various binding types (prefixes, RDFNode, etc)
+- Authentication support for SPARQL Endpoints
+- Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 - More tests
 - Better docstrings
 

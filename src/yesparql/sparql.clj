@@ -54,7 +54,7 @@
 (defn select
   [data-set ^String query bindings]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (ResultSetFactory/copyResults (.execSelect q))))
+    (ResultSetFactory/makeRewindable (.execSelect q))))
 
 (defn construct
   [data-set ^String query bindings]
@@ -79,7 +79,6 @@
 (defmethod update-exec DatasetGraph [data-set update]
   (UpdateExecutionFactory/create update ^DatasetGraph data-set))
 
-
 (defn update
   ([data-set updates]
    (let [^UpdateRequest update-request (UpdateFactory/create)]
@@ -95,24 +94,26 @@
 (defn output-stream []
   (java.io.ByteArrayOutputStream.))
 
-;; Convert ResultSet
-(defn result->json
-  [^ResultSet result]
-  (with-open [^java.io.OutputStream out (output-stream)]
-    (ResultSetFormatter/outputAsJSON out result)
-    (str out)))
+(defn- reset-if-rewindable!
+  [result]
+  (when (instance? org.apache.jena.query.ResultSetRewindable result)
+    (.reset result)))
 
-(defn result->csv
-  [^ResultSet result]
-  (with-open [^java.io.OutputStream out (output-stream)]
-    (ResultSetFormatter/outputAsCSV out result)
-    (str out)))
+;; Serialize ResultSet
+(defmacro serialize-result
+  [method result]
+  `(let [output# (output-stream)]
+     (try
+       (do
+         (reset-if-rewindable! ~result)
+         (~method ^java.io.OutputStream output# ^ResultSet ~result)
+         (str output#))
+       (finally (.close output#)))))
 
-(defn result->xml
-  [^ResultSet result]
-  (with-open [^java.io.OutputStream out (output-stream)]
-    (ResultSetFormatter/outputAsXML out result)
-    (str out)))
+(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
+(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
+(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
+(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
 (defn result->clj
   [^ResultSet result]
@@ -121,9 +122,10 @@
 (defn result->model
   [^ResultSet result]
   (let [^RDFOutput rdf (RDFOutput.)]
+    (reset-if-rewindable! result)
     (.asModel rdf result)))
 
-;; Convert model
+;; Serialize model
 (defn serialize-model
   [^Model model ^String format]
   (with-open [w (java.io.StringWriter.)]

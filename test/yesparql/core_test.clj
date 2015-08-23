@@ -58,4 +58,6 @@
   "yesparql/samples/remote-query.sparql"
   {:connection "http://dbpedia.org/sparql"})
 
-(expect 10 (triple-count (dbpedia-select)))
+(expect 10
+        (triple-count
+         (dbpedia-select {:bindings {"subject" (URI. "dbpedia-resource:Category:1942_deaths")}})))
