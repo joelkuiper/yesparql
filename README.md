@@ -71,14 +71,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 You can supply default(/initial) bindings as a map of strings (the names) to `URI`, `URL`, `RDFNode`, `Node`, or literals (default).
-
-```clojure
-(select-intellectuals
- {:bindings
-  {"subject" (URI. "http://dbpedia.org/resource/Category:1942_deaths")}})
-```
-
-A more complete example of running a SPARQL SELECT against DBPedia
+A more complete example of running a SPARQL SELECT against DBPedia with bindings:
 
 ```clojure
 (print
