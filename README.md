@@ -101,6 +101,9 @@ A complete example of running a SPARQL SELECT against DBPedia, with initial bind
 ;=> http://dbpedia.org/resource/Andrew_Lawson
 ```
 
+### One file, Many Queries
+[Same as Yesql](https://github.com/krisajenkins/yesql#one-file-many-queries)
+
 ### [SPARQL Injection Notes](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ParameterizedSparqlString.html)
 
 While `ParameterizedSparqlString` was in part designed to prevent SPARQL injection it is by no means foolproof because it works purely at the textual level. The current version of the code addresses some possible attack vectors that the developers have identified but we do not claim to be sufficiently devious to have thought of and prevented every possible attack vector.
@@ -121,9 +124,6 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
   {:connection tdb})
 
 ```
-
-### One file, Many Queries
-[Same as Yesql](https://github.com/krisajenkins/yesql#one-file-many-queries)
 
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
