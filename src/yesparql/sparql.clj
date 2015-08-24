@@ -19,12 +19,12 @@
     ParameterizedSparqlString
     ResultSetFactory ResultSet ResultSetFormatter]))
 
-(defn query-with-bindings
+(defn parameterize
   "The `query` string will be formatted as a `ParameterizedSparqlString`
    and can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
    Any other type (e.g. strings, float) will be set as literal.
-   Does not warn if setting a non-existing binding. "
+   Does not warn if setting a binding that does not exist. "
   [query bindings]
   (let [pq (ParameterizedSparqlString. ^String query)]
     (doall
@@ -44,34 +44,36 @@
 (defmethod query-exec String [data-set query bindings]
   (QueryExecutionFactory/sparqlService
    ^String data-set
-   ^Query (.asQuery (query-with-bindings query bindings))))
+   ^Query (.asQuery (parameterize query bindings))))
 
-(defn exec*
+(defn query-exec*
   [data-set query bindings]
   (QueryExecutionFactory/create
-   ^Query (.asQuery (query-with-bindings query bindings))
+   ^Query (.asQuery (parameterize query bindings))
    ^Dataset data-set))
 
-(defmethod query-exec Dataset [data-set query bindings] (exec* data-set query bindings))
-(defmethod query-exec DatasetGraph [data-set query bindings] (exec* data-set query bindings))
-(defmethod query-exec Model [data-set query bindings] (exec* data-set query bindings))
+(defmethod query-exec Dataset [data-set query bindings] (query-exec* data-set query bindings))
+(defmethod query-exec DatasetGraph [data-set query bindings] (query-exec* data-set query bindings))
+(defmethod query-exec Model [data-set query bindings] (query-exec* data-set query bindings))
 
 (defn select
   "Execute a SPARQL SELECT `query` against the `data-set`, returning a
   `ResultSet`. `bindings` will be substituted when possible, can be
   empty. `data-set` can be a String for a SPARQL endpoint URL or
   `Dataset`"
-  [data-set ^String query bindings]
+  [data-set ^String query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (ResultSetFactory/makeRewindable (.execSelect q))))
+    (when timeout (.setTimeout q timeout))
+    (ResultSetFactory/copyResults (.execSelect q))))
 
 (defn construct
   "Execute a SPARQL CONSTRUCT `query` against the `data-set`,
   returning a `Model`. `bindings` will be substituted when possible,
   can be empty. `data-set` can be a String for a SPARQL endpoint URL
   or `Dataset`"
-  [data-set ^String query bindings]
+  [data-set ^String query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
+    (when timeout (.setTimeout q timeout))
     (.execConstruct q)))
 
 (defn describe
@@ -79,16 +81,18 @@
   a `Model`. `bindings` will be substituted when possible, can be
   empty. `data-set` can be a String for a SPARQL endpoint URL or
   `Dataset`"
-  [data-set ^String query bindings]
+  [data-set ^String query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
+    (when timeout (.setTimeout q timeout))
     (.execDescribe q)))
 
 (defn ask
   "Execute a SPARQL ASK `query` against the `data-set`, returning a
   boolean. `bindings` will be substituted when possible, can be empty.
   `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [data-set ^String query bindings]
+  [data-set ^String query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
+    (when timeout (.setTimeout q timeout))
     (.execAsk q)))
 
 (defmulti update-exec (fn [data-set _] (class data-set)))
@@ -104,16 +108,11 @@
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
   `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
-  ([data-set updates]
-   (let [^UpdateRequest update-request (UpdateFactory/create)]
-     (doseq [update updates]
-       (.add update-request ^String update))
-     (.execute (update-exec data-set update-request))))
-  ([data-set ^String query bindings]
-   (let [q (.toString (.asUpdate (query-with-bindings query bindings)))
-         ^UpdateRequest update-request (UpdateFactory/create q)
-         ^UpdateProcessor processor (update-exec data-set update-request)]
-     (.execute processor))))
+  [data-set ^String query {:keys [bindings]}]
+  (let [q (.toString (.asUpdate (parameterize query bindings)))
+        ^UpdateRequest update-request (UpdateFactory/create q)
+        ^UpdateProcessor processor (update-exec data-set update-request)]
+    (.execute processor)))
 
 (defn output-stream []
   (java.io.ByteArrayOutputStream.))

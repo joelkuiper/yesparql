@@ -13,13 +13,13 @@
   (let [sparql-fn
         (cond
           (re-matches #"select-.+" name) sparql/select
-          (or (re-matches #"\w+\?" name) (re-matches #"ask-.+" name)) sparql/ask
-          (or (re-matches #"\w+\!" name) (re-matches #"update-.+" name)) sparql/update
+          (or (re-matches #"\w+\?" name) (re-matches #"ask-\w+" name)) sparql/ask
+          (or (re-matches #"\w+\!" name) (re-matches #"update-\w+" name)) sparql/update
           (re-matches #"describe-.+" name) sparql/describe
           (re-matches #"construct-.+" name) sparql/construct
           :else sparql/select)]
     (fn [connection statement call-options]
-      (sparql-fn connection statement (:bindings call-options)))))
+      (sparql-fn connection statement call-options))))
 
 (defn- connection-error
   [name]
@@ -42,11 +42,12 @@
    query-options]
   (assert name      "Query name is mandatory.")
   (assert statement "Query statement is mandatory.")
-  (let [handler-fn (statement-handler name)
-        global-connection (:connection query-options)
+  (let [global-connection (:connection query-options)
+        default-handler (or (:query-fn query-options) (statement-handler name))
         real-fn
         (fn [call-options]
-          (let [connection (or (:connection call-options) global-connection)]
+          (let [handler-fn (or (:query-fn call-options) default-handler)
+                connection (or (:connection call-options) global-connection)]
             (assert connection (connection-error name))
             (handler-fn connection statement call-options)))
         [display-args generated-fn]

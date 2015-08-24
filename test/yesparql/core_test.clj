@@ -52,8 +52,11 @@
                         (sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
                         [:results :bindings]))))
 
-;; Test remote SPARQL endpoints
+;; Test with function override
+(expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
+        (select-all {:query-fn (fn [data-set statement call-options]  statement)}))
 
+;; Test remote SPARQL endpoints
 (defquery dbpedia-select
   "yesparql/samples/remote-query.sparql"
   {:connection "http://dbpedia.org/sparql"})
