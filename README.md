@@ -101,6 +101,12 @@ A complete example of running a SPARQL SELECT against DBPedia, with initial bind
 ;=> http://dbpedia.org/resource/Andrew_Lawson
 ```
 
+### [SPARQL Injection Notes](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ParameterizedSparqlString.html)
+
+While `ParameterizedSparqlString` was in part designed to prevent SPARQL injection it is by no means foolproof because it works purely at the textual level. The current version of the code addresses some possible attack vectors that the developers have identified but we do not claim to be sufficiently devious to have thought of and prevented every possible attack vector.
+
+Therefore we strongly recommend that users concerned about SPARQL Injection attacks perform their own validation on provided parameters and test their use of this class themselves prior to its use in any security conscious deployment. We also recommend that users do not use easily guess-able variable names for their parameters as these can allow a chained injection attack, though generally speaking the code should prevent these.
+
 ### TDB
 In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
 The `yesparql.tdb` namespace provides convenience methods for constructing these.
