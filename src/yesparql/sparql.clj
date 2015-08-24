@@ -19,6 +19,78 @@
     ParameterizedSparqlString
     ResultSetFactory ResultSet ResultSetFormatter]))
 
+;; Util
+(defn ^java.io.OutputStream output-stream []
+  (java.io.ByteArrayOutputStream.))
+
+(defn- reset-if-rewindable!
+  [^ResultSet result]
+  (when (instance? org.apache.jena.query.ResultSetRewindable result)
+    (.reset result)))
+
+
+;; Serialize model
+(defn serialize-model
+  [^Model model ^String format]
+  (with-open [w (java.io.StringWriter.)]
+    (.write model w format)
+    (str w)))
+
+(defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
+(defn model->ttl [^Model model] (serialize-model model "TTL"))
+(defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
+
+
+;; Serialize ResultSet
+(defmacro serialize-result
+  [method result]
+  `(let [output# (output-stream)]
+     (try
+       (do
+         (reset-if-rewindable! ~result)
+         (~method ^java.io.OutputStream output# ^ResultSet ~result)
+         (.toString output# "UTF-8"))
+       (finally (.close output#)))))
+
+(defn result->json* [result] (serialize-result ResultSetFormatter/outputAsJSON result))
+(defn result->xml* [result] (serialize-result ResultSetFormatter/outputAsXML result))
+(defn result->csv* [result] (serialize-result ResultSetFormatter/outputAsCSV result))
+(defn result->tsv* [result] (serialize-result ResultSetFormatter/outputAsTSV result))
+
+(defn result->clj*
+  [^ResultSet result]
+  (json/decode (result->json result) true))
+
+(defn result->model*
+  [^ResultSet result]
+  (let [^RDFOutput rdf (RDFOutput.)]
+    (reset-if-rewindable! result)
+    (.asModel rdf result)))
+
+(defprotocol Convert
+  "A protocol for converting Result to several usable output formats"
+  (result->json [this] "Result as JSON")
+  (result->csv [this] "Result as CSV")
+  (result->tsv [this] "Result as TSV")
+  (result->clj [this] "Result as a Clojure map (via JSON)")
+  (result->xml [this] "Result as XML (not RDF)")
+  (result->model [this] "Convert result to a Jena `Model`"))
+
+(defn- copy-result
+  [record]
+  (assoc record :result-set (ResultSetFactory/copyResults (:result-set record))))
+
+(defrecord Result [query-exec result-set]
+  Convert
+  (result->json [this] (result->json* result-set))
+  (result->csv [this] (result->csv*  result-set))
+  (result->tsv [this] (result->tsv* result-set))
+  (result->clj [this] (result->clj* result-set))
+  (result->xml [this] (result->xml* result-set))
+  (result->model [this] (result->model* result-set))
+  java.io.Closeable
+  (close [this] (.close query-exec)))
+
 (defn parameterized-query
   [^String statement]
   (ParameterizedSparqlString. statement))
@@ -59,7 +131,6 @@
 (defmethod query-exec DatasetGraph [connection query] (query-exec* connection query))
 (defmethod query-exec Model [connection query] (query-exec* connection query))
 
-
 ;; TODO maybe use a macro for this?
 (defmulti query* (fn [q-exec type] type))
 (defmethod query* "ask" [q-exec _] (.execAsk  ^QueryExecution q-exec))
@@ -77,7 +148,7 @@
                      (.isAskType q) "ask"
                      (.isDescribeType q) "describe")]
     (when timeout (.setTimeout query-execution timeout))
-    (query* query-execution query-type)))
+    (Result. query-execution (query* query-execution query-type))))
 
 (defmulti update-exec (fn [data-set _] (class data-set)))
 (defmethod update-exec String [data-set update]
@@ -97,48 +168,3 @@
         ^UpdateRequest update-request (UpdateFactory/create q)
         ^UpdateProcessor processor (update-exec connection update-request)]
     (.execute processor)))
-
-(defn ^java.io.OutputStream output-stream []
-  (java.io.ByteArrayOutputStream.))
-
-(defn- reset-if-rewindable!
-  [^ResultSet result]
-  (when (instance? org.apache.jena.query.ResultSetRewindable result)
-    (.reset result)))
-
-;; Serialize ResultSet
-(defmacro serialize-result
-  [method result]
-  `(let [output# (output-stream)]
-     (try
-       (do
-         (reset-if-rewindable! ~result)
-         (~method ^java.io.OutputStream output# ^ResultSet ~result)
-         (.toString output# "UTF-8"))
-       (finally (.close output#)))))
-
-(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
-(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
-(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
-(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
-
-(defn result->clj
-  [^ResultSet result]
-  (json/decode (result->json result) true))
-
-(defn result->model
-  [^ResultSet result]
-  (let [^RDFOutput rdf (RDFOutput.)]
-    (reset-if-rewindable! result)
-    (.asModel rdf result)))
-
-;; Serialize model
-(defn serialize-model
-  [^Model model ^String format]
-  (with-open [w (java.io.StringWriter.)]
-    (.write model w format)
-    (str w)))
-
-(defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
-(defn model->ttl [^Model model] (serialize-model model "TTL"))
-(defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
