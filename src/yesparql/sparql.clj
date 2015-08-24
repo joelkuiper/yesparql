@@ -19,7 +19,7 @@
     ParameterizedSparqlString
     ResultSetFactory ResultSet ResultSetFormatter]))
 
-(defn parameterize
+(defn query-with-bindings
   "The `query` string will be formatted as a `ParameterizedSparqlString`
    and can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
@@ -44,12 +44,12 @@
 (defmethod query-exec String [data-set query bindings]
   (QueryExecutionFactory/sparqlService
    ^String data-set
-   ^Query (.asQuery (parameterize query bindings))))
+   ^Query (.asQuery (query-with-bindings query bindings))))
 
 (defn query-exec*
   [data-set query bindings]
   (QueryExecutionFactory/create
-   ^Query (.asQuery (parameterize query bindings))
+   ^Query (.asQuery (query-with-bindings query bindings))
    ^Dataset data-set))
 
 (defmethod query-exec Dataset [data-set query bindings] (query-exec* data-set query bindings))
@@ -109,7 +109,7 @@
   will be substituted when possible, can be empty.
   `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
   [data-set ^String query {:keys [bindings]}]
-  (let [q (.toString (.asUpdate (parameterize query bindings)))
+  (let [q (.toString (.asUpdate (query-with-bindings query bindings)))
         ^UpdateRequest update-request (UpdateFactory/create q)
         ^UpdateProcessor processor (update-exec data-set update-request)]
     (.execute processor)))
