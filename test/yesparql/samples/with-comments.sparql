@@ -1,0 +1,9 @@
+-- Default query selecting 25 triples
+
+SELECT ?subject ?predicate ?object
+-- this is a where block
+WHERE {
+  ?subject ?predicate ?object
+}
+-- bla bla
+LIMIT 25
