@@ -52,44 +52,21 @@
          (.toString output# "UTF-8"))
        (finally (.close output#)))))
 
-(defn result->json* [result] (serialize-result ResultSetFormatter/outputAsJSON result))
-(defn result->xml* [result] (serialize-result ResultSetFormatter/outputAsXML result))
-(defn result->csv* [result] (serialize-result ResultSetFormatter/outputAsCSV result))
-(defn result->tsv* [result] (serialize-result ResultSetFormatter/outputAsTSV result))
+(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
+(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
+(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
+(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
-(defn result->clj*
+(defn result->clj
   [^ResultSet result]
   (json/decode (result->json result) true))
 
-(defn result->model*
+(defn result->model
   [^ResultSet result]
   (let [^RDFOutput rdf (RDFOutput.)]
     (reset-if-rewindable! result)
     (.asModel rdf result)))
 
-(defprotocol Convert
-  "A protocol for converting Result to several usable output formats"
-  (result->json [this] "Result as JSON")
-  (result->csv [this] "Result as CSV")
-  (result->tsv [this] "Result as TSV")
-  (result->clj [this] "Result as a Clojure map (via JSON)")
-  (result->xml [this] "Result as XML (not RDF)")
-  (result->model [this] "Convert result to a Jena `Model`"))
-
-(defn- copy-result
-  [record]
-  (assoc record :result-set (ResultSetFactory/copyResults (:result-set record))))
-
-(defrecord Result [query-exec result-set]
-  Convert
-  (result->json [this] (result->json* result-set))
-  (result->csv [this] (result->csv*  result-set))
-  (result->tsv [this] (result->tsv* result-set))
-  (result->clj [this] (result->clj* result-set))
-  (result->xml [this] (result->xml* result-set))
-  (result->model [this] (result->model* result-set))
-  java.io.Closeable
-  (close [this] (.close query-exec)))
 
 (defn parameterized-query
   [^String statement]
@@ -148,7 +125,7 @@
                      (.isAskType q) "ask"
                      (.isDescribeType q) "describe")]
     (when timeout (.setTimeout query-execution timeout))
-    (Result. query-execution (query* query-execution query-type))))
+    (query* query-execution query-type)))
 
 (defmulti update-exec (fn [data-set _] (class data-set)))
 (defmethod update-exec String [data-set update]
