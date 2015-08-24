@@ -19,25 +19,28 @@
     ParameterizedSparqlString
     ResultSetFactory ResultSet ResultSetFormatter]))
 
+(defn parameterized-query
+  [^String statement]
+  (ParameterizedSparqlString. statement))
+
 (defn query-with-bindings
   "The `query` string will be formatted as a `ParameterizedSparqlString`
    and can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
    Any other type (e.g. strings, float) will be set as literal.
    Does not warn if setting a binding that does not exist. "
-  [query bindings]
-  (let [pq (ParameterizedSparqlString. ^String query)]
-    (doall
-     (map
-      (fn [[name resource]]
-        (condp instance? resource
-          URL (.setIri pq ^String name ^URL resource)
-          URI (.setIri pq ^String name ^String (str resource))
-          Node (.setParam pq ^String name ^Node resource)
-          RDFNode (.setParam pq ^String name ^RDFNode resource)
-          (.setLiteral pq name resource)))
-      bindings))
-    pq))
+  [^ParameterizedSparqlString pq bindings]
+  (doall
+   (map
+    (fn [[name resource]]
+      (condp instance? resource
+        URL (.setIri pq ^String name ^URL resource)
+        URI (.setIri pq ^String name ^String (str resource))
+        Node (.setParam pq ^String name ^Node resource)
+        RDFNode (.setParam pq ^String name ^RDFNode resource)
+        (.setLiteral pq name resource)))
+    bindings))
+  pq)
 
 (defmulti query-exec (fn [data-set _ _] (class data-set)))
 
@@ -61,7 +64,7 @@
   `ResultSet`. `bindings` will be substituted when possible, can be
   empty. `data-set` can be a String for a SPARQL endpoint URL or
   `Dataset`"
-  [data-set ^String query {:keys [bindings timeout]}]
+  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (when timeout (.setTimeout q timeout))
     (ResultSetFactory/copyResults (.execSelect q))))
@@ -71,7 +74,7 @@
   returning a `Model`. `bindings` will be substituted when possible,
   can be empty. `data-set` can be a String for a SPARQL endpoint URL
   or `Dataset`"
-  [data-set ^String query {:keys [bindings timeout]}]
+  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (when timeout (.setTimeout q timeout))
     (.execConstruct q)))
@@ -81,7 +84,7 @@
   a `Model`. `bindings` will be substituted when possible, can be
   empty. `data-set` can be a String for a SPARQL endpoint URL or
   `Dataset`"
-  [data-set ^String query {:keys [bindings timeout]}]
+  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (when timeout (.setTimeout q timeout))
     (.execDescribe q)))
@@ -90,7 +93,7 @@
   "Execute a SPARQL ASK `query` against the `data-set`, returning a
   boolean. `bindings` will be substituted when possible, can be empty.
   `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [data-set ^String query {:keys [bindings timeout]}]
+  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
   (with-open [q ^QueryExecution (query-exec data-set query bindings)]
     (when timeout (.setTimeout q timeout))
     (.execAsk q)))
@@ -108,7 +111,7 @@
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
   `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [data-set ^String query {:keys [bindings]}]
+  [data-set ^ParameterizedSparqlString query {:keys [bindings]}]
   (let [q (.toString (.asUpdate (query-with-bindings query bindings)))
         ^UpdateRequest update-request (UpdateFactory/create q)
         ^UpdateProcessor processor (update-exec data-set update-request)]

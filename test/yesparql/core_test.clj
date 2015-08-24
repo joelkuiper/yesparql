@@ -20,7 +20,7 @@
   "yesparql/samples/select.sparql"
   {:connection tdb})
 
-(defquery update-books
+(defquery update-books!
   "yesparql/samples/update.sparql"
   {:connection tdb})
 
@@ -36,7 +36,7 @@
 
 ;; With 4 books
 (expect 4 (do
-            (update-books)
+            (update-books!)
             (triple-count (select-all))))
 
 (expect true (ask-book))
@@ -56,7 +56,7 @@
 
 ;; Test with function override
 (expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
-        (select-all {:query-fn (fn [data-set statement call-options]  statement)}))
+        (select-all {:query-fn (fn [data-set query call-options]  (str query))}))
 
 ;; Test with comments
 (defquery select-foo

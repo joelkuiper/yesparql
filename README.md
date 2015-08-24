@@ -128,11 +128,9 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
-- Names starting with `select` (e.g. `select-intellectuals`) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
-- Names starting with `update` or ending with `!`  perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
-- Names starting with `ask` or ending with `?`  perform a [SPARQL ASK](http://www.w3.org/TR/rdf-sparql-query/#ask)
-- Names starting with `construct` perform a [SPARQL CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct)
-- Names starting with `describe` perform a [SPARQL DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe)
+- Names ending with `!` will perform a a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
+- All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask) [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select) [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct) [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
+
 
 ### Results processing
 Each of the executed queries returns its native [Apace Jena](https://jena.apache.org/) [ResultSet](https://jena.apache.org/documentation/javadoc/arq/) or [Model](https://jena.apache.org/documentation/javadoc/jena/) (depending on the type of query).
