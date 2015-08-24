@@ -130,7 +130,7 @@
        (do
          (reset-if-rewindable! ~result)
          (~method ^java.io.OutputStream output# ^ResultSet ~result)
-         (str output#))
+         (.toString output# "UTF-8"))
        (finally (.close output#)))))
 
 (defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
