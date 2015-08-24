@@ -36,7 +36,9 @@
    - If the name starts with `update-` or ends with `!` a SPARQL update will be executed
    - If the name starts with `ask-` or ends with `?` a SPARQL ask will be executed
    - If the name starts with `construct-` a SPARQL construct will be executed
-   - otherwise a SPARQL select will be executed"
+   - otherwise a SPARQL select will be executed.
+   You can override this behavior by passing a `:query-fn` at call or query time.
+   `query-fn` is a function with the signature `[data-set statement call-options]`."
   [{:keys [name docstring statement]
     :as query}
    query-options]
