@@ -52,21 +52,24 @@
          (.toString output# "UTF-8"))
        (finally (.close output#)))))
 
-(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
-(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
-(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
-(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
+(defn result->json ([result] (serialize-result ResultSetFormatter/outputAsJSON result)))
+(defn result->xml ([result] (serialize-result ResultSetFormatter/outputAsXML result)))
+(defn result->csv ([result] (serialize-result ResultSetFormatter/outputAsCSV result)))
+(defn result->tsv ([result] (serialize-result ResultSetFormatter/outputAsTSV result)))
 
 (defn result->clj
-  [^ResultSet result]
-  (json/decode (result->json result) true))
+  ([result]
+   (json/decode (result->json ^ResultSet result) true)))
 
 (defn result->model
-  [^ResultSet result]
-  (let [^RDFOutput rdf (RDFOutput.)]
-    (reset-if-rewindable! result)
-    (.asModel rdf result)))
+  ([result]
+   (let [^RDFOutput rdf (RDFOutput.)]
+     (reset-if-rewindable! result)
+     (.asModel rdf ^ResultSet result))))
 
+(defn copy-result
+  [^ResultSet result]
+  (ResultSetFactory/copyResults result))
 
 (defn parameterized-query
   [^String statement]
@@ -108,24 +111,36 @@
 (defmethod query-exec DatasetGraph [connection query] (query-exec* connection query))
 (defmethod query-exec Model [connection query] (query-exec* connection query))
 
-;; TODO maybe use a macro for this?
-(defmulti query* (fn [q-exec type] type))
-(defmethod query* "ask" [q-exec _] (.execAsk  ^QueryExecution q-exec))
-(defmethod query* "construct" [q-exec _] (.execConstruct ^QueryExecution q-exec))
-(defmethod query* "describe" [q-exec _] (.execDescribe ^QueryExecution q-exec))
-(defmethod query* "select" [q-exec _] (.execSelect ^QueryExecution q-exec))
+(defn- query-type
+  [q]
+  (cond
+    (.isSelectType q) "select"
+    (.isConstructType q) "construct"
+    (.isAskType q) "ask"
+    (.isDescribeType q) "describe"))
+
+;; TODO maybe use a macro or a protocol for this?
+(defmulti query* (fn [query _] (query-type query)))
+(defmethod query* "ask" [query q-exec] (.execAsk  ^QueryExecution q-exec))
+(defmethod query* "construct" [query q-exec] (.execConstruct ^QueryExecution q-exec))
+(defmethod query* "describe" [query q-exec] (.execDescribe ^QueryExecution q-exec))
+(defmethod query* "select" [query q-exec] (.execSelect ^QueryExecution q-exec))
+
+
 
 (defn query
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
   (let [^Query q (.asQuery (query-with-bindings pq bindings))
-        ^QueryExecution query-execution (query-exec connection q)
-        query-type (cond
-                     (.isSelectType q) "select"
-                     (.isConstructType q) "construct"
-                     (.isAskType q) "ask"
-                     (.isDescribeType q) "describe")]
+        ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
-    (query* query-execution query-type)))
+    [query-execution (query* q query-execution)]))
+
+(defmacro with-query-exec
+  [bindings & body]
+  `(let [[q-exec# ~(first bindings)] ~(second bindings)]
+     (with-open [qe# q-exec#]
+       ~@body)))
+
 
 (defmulti update-exec (fn [data-set _] (class data-set)))
 (defmethod update-exec String [data-set update]
