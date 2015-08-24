@@ -129,7 +129,7 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
 - Names ending with `!` will perform a a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
-- All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask) [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select) [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct) [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
+- All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask), [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select), [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct), or [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
 
 
 ### Results processing
@@ -161,6 +161,17 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (serialize-model model format)
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
+
+Note that performing `SELECT` queries this way requires the entire [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) to be consumed, on top of which a copy is returned with
+`ResultSetFactory/copyResults` in order to use the result outside of the function.
+This can be very memory intensive, to consume the `ResultSet` in an iterative (/streaming) way you can use the `with-query-execution` macro.
+
+```clojure
+(with-query-execution [result (select-intellectuals)]
+  ;... use (.next result) iteratively or simply (result->csv result) ...
+)
+
+```
 
 Note that it is not a primary goal to provide a full native Clojure wrapper.
 It's perfectly to fine to keep using the Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
