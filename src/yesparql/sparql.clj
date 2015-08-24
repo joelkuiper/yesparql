@@ -50,7 +50,7 @@
   [data-set query bindings]
   (QueryExecutionFactory/create
    ^Query (.asQuery (query-with-bindings query bindings))
-   ^Dataset data-set))
+   data-set))
 
 (defmethod query-exec Dataset [data-set query bindings] (query-exec* data-set query bindings))
 (defmethod query-exec DatasetGraph [data-set query bindings] (query-exec* data-set query bindings))
