@@ -63,4 +63,5 @@
 
 (expect 10
         (triple-count
-         (dbpedia-select {:bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+         (dbpedia-select {:timeout 250
+                          :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
