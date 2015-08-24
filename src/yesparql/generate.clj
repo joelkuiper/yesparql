@@ -13,12 +13,7 @@
   (let [sparql-fn
         (cond
           (= (last name) \!) sparql/update
-          :else (let [q (.asQuery query)]
-                  (cond
-                    (.isSelectType q) sparql/select
-                    (.isConstructType q) sparql/construct
-                    (.isAskType q) sparql/ask
-                    (.isDescribeType q) sparql/describe)))]
+          :else sparql/query)]
     (fn [connection query call-options]
       (sparql-fn connection query call-options))))
 
@@ -32,11 +27,11 @@
 
 (defn generate-query-fn
   "Generate a function to run a query
-   - if the name ends with `!` a SPARQL update will be executed
-   - otherwise a SPARQL query will be executed.
+   - if the name ends with `!` a SPARQL UPDATE will be executed
+   - otherwise a SPARQL QUERY will be executed.
 
    [FOR TESTING] you can override this behavior by passing a `:query-fn` at call or query time.
-   `query-fn` is a function with the signature `[data-set query call-options]`."
+   `query-fn` is a function with the signature `[data-set query call-options]` and will be used instead."
   [{:keys [name docstring statement]
     :as query}
    query-options]

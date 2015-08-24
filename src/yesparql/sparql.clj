@@ -23,7 +23,7 @@
   [^String statement]
   (ParameterizedSparqlString. statement))
 
-(defn query-with-bindings
+(defn ^ParameterizedSparqlString query-with-bindings
   "The `query` string will be formatted as a `ParameterizedSparqlString`
    and can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
@@ -42,61 +42,42 @@
     bindings))
   pq)
 
-(defmulti query-exec (fn [data-set _ _] (class data-set)))
 
-(defmethod query-exec String [data-set query bindings]
+(defmulti query-exec (fn [connection _] (class connection)))
+(defmethod query-exec String [connection query]
   (QueryExecutionFactory/sparqlService
-   ^String data-set
-   ^Query (.asQuery (query-with-bindings query bindings))))
+   ^String connection
+   ^Query query))
 
 (defn query-exec*
-  [data-set query bindings]
+  [connection query]
   (QueryExecutionFactory/create
-   ^Query (.asQuery (query-with-bindings query bindings))
-   data-set))
+   ^Query query
+   connection))
 
-(defmethod query-exec Dataset [data-set query bindings] (query-exec* data-set query bindings))
-(defmethod query-exec DatasetGraph [data-set query bindings] (query-exec* data-set query bindings))
-(defmethod query-exec Model [data-set query bindings] (query-exec* data-set query bindings))
+(defmethod query-exec Dataset [connection query] (query-exec* connection query))
+(defmethod query-exec DatasetGraph [connection query] (query-exec* connection query))
+(defmethod query-exec Model [connection query] (query-exec* connection query))
 
-(defn select
-  "Execute a SPARQL SELECT `query` against the `data-set`, returning a
-  `ResultSet`. `bindings` will be substituted when possible, can be
-  empty. `data-set` can be a String for a SPARQL endpoint URL or
-  `Dataset`"
-  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
-  (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (when timeout (.setTimeout q timeout))
-    (ResultSetFactory/copyResults (.execSelect q))))
 
-(defn construct
-  "Execute a SPARQL CONSTRUCT `query` against the `data-set`,
-  returning a `Model`. `bindings` will be substituted when possible,
-  can be empty. `data-set` can be a String for a SPARQL endpoint URL
-  or `Dataset`"
-  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
-  (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (when timeout (.setTimeout q timeout))
-    (.execConstruct q)))
+;; TODO maybe use a macro for this?
+(defmulti query* (fn [q-exec type] type))
+(defmethod query* "ask" [q-exec _] (.execAsk  ^QueryExecution q-exec))
+(defmethod query* "construct" [q-exec _] (.execConstruct ^QueryExecution q-exec))
+(defmethod query* "describe" [q-exec _] (.execDescribe ^QueryExecution q-exec))
+(defmethod query* "select" [q-exec _] (.execSelect ^QueryExecution q-exec))
 
-(defn describe
-  "Execute a SPARQL DESCRIBE `query` against the `data-set`, returning
-  a `Model`. `bindings` will be substituted when possible, can be
-  empty. `data-set` can be a String for a SPARQL endpoint URL or
-  `Dataset`"
-  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
-  (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (when timeout (.setTimeout q timeout))
-    (.execDescribe q)))
-
-(defn ask
-  "Execute a SPARQL ASK `query` against the `data-set`, returning a
-  boolean. `bindings` will be substituted when possible, can be empty.
-  `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [data-set ^ParameterizedSparqlString query {:keys [bindings timeout]}]
-  (with-open [q ^QueryExecution (query-exec data-set query bindings)]
-    (when timeout (.setTimeout q timeout))
-    (.execAsk q)))
+(defn query
+  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
+  (let [^Query q (.asQuery (query-with-bindings pq bindings))
+        ^QueryExecution query-execution (query-exec connection q)
+        query-type (cond
+                     (.isSelectType q) "select"
+                     (.isConstructType q) "construct"
+                     (.isAskType q) "ask"
+                     (.isDescribeType q) "describe")]
+    (when timeout (.setTimeout query-execution timeout))
+    (query* query-execution query-type)))
 
 (defmulti update-exec (fn [data-set _] (class data-set)))
 (defmethod update-exec String [data-set update]
@@ -110,18 +91,18 @@
   "Execute a SPARQL UPDATE `query` against the `data-set`,
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
-  `data-set` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [data-set ^ParameterizedSparqlString query {:keys [bindings]}]
-  (let [q (.toString (.asUpdate (query-with-bindings query bindings)))
+  `connection` can be a String for a SPARQL endpoint URL or `Dataset`"
+  [connection ^ParameterizedSparqlString pq {:keys [bindings]}]
+  (let [q (.toString (.asUpdate (query-with-bindings pq bindings)))
         ^UpdateRequest update-request (UpdateFactory/create q)
-        ^UpdateProcessor processor (update-exec data-set update-request)]
+        ^UpdateProcessor processor (update-exec connection update-request)]
     (.execute processor)))
 
-(defn output-stream []
+(defn ^java.io.OutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
 
 (defn- reset-if-rewindable!
-  [result]
+  [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
 
