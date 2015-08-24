@@ -52,10 +52,10 @@
          (.toString output# "UTF-8"))
        (finally (.close output#)))))
 
-(defn result->json ([result] (serialize-result ResultSetFormatter/outputAsJSON result)))
-(defn result->xml ([result] (serialize-result ResultSetFormatter/outputAsXML result)))
-(defn result->csv ([result] (serialize-result ResultSetFormatter/outputAsCSV result)))
-(defn result->tsv ([result] (serialize-result ResultSetFormatter/outputAsTSV result)))
+(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
+(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
+(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
+(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
 (defn result->clj
   ([result]
@@ -120,24 +120,45 @@
     (.isDescribeType q) "describe"))
 
 ;; TODO maybe use a macro or a protocol for this?
-(defmulti query* (fn [query _] (query-type query)))
-(defmethod query* "ask" [query q-exec] (.execAsk  ^QueryExecution q-exec))
-(defmethod query* "construct" [query q-exec] (.execConstruct ^QueryExecution q-exec))
-(defmethod query* "describe" [query q-exec] (.execDescribe ^QueryExecution q-exec))
-(defmethod query* "select" [query q-exec] (.execSelect ^QueryExecution q-exec))
-
+(defmulti query* (fn [_ type] type))
+(defmethod query* "ask" [q-exec _] (.execAsk  ^QueryExecution q-exec))
+(defmethod query* "construct" [q-exec _] (.execConstruct ^QueryExecution q-exec))
+(defmethod query* "describe" [q-exec _] (.execDescribe ^QueryExecution q-exec))
+(defmethod query* "select" [q-exec _] (.execSelect ^QueryExecution q-exec))
 
 
 (defn query
-  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
+  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]} & [transactional?]]
   (let [^Query q (.asQuery (query-with-bindings pq bindings))
+        query-type (query-type q)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
-    [query-execution (query* q query-execution)]))
+    (if transactional?
+      ;; This is the case for when called from within the `with-query-execution` macro.
+      ;; In this case we return a tuple of [`QueryExecution` result].
+      ;; The type of the second element, result, depends on the type of executed query.
+      ;; and is one of {`ResultSet`, `Model`, `boolean`}.
+      ;; In the case of a `ResultSet` a user can process it iteratively, as a stream.
+      [query-execution (query* query-execution query-type)]
 
-(defmacro with-query-exec
-  [bindings & body]
-  `(let [[q-exec# ~(first bindings)] ~(second bindings)]
+      ;; This is the default case and will consume the entire result
+      ;; and subsequently close the `QueryExecution`.
+      ;; This prevents resources from leaking, but is more memory intensive.
+      ;; When the query result is a `ResultSet` we return a copy.
+      (with-open [q-exec query-execution]
+        (if (= query-type "select")
+          (copy-result (query* query-execution query-type))
+          (query* query-execution query-type))))))
+
+
+(defmacro add-kw
+  [fun kw]
+  (concat fun (cons kw '())))
+
+
+(defmacro with-query-execution
+  [binding & body]
+  `(let [[q-exec#  ~(first binding)] (add-kw ~(second binding) :with-query-exec)]
      (with-open [qe# q-exec#]
        ~@body)))
 

@@ -11,7 +11,7 @@
 
 (defn triple-count
   [results]
-  (count (get-in (sparql/result->clj (second results)) [:results :bindings])))
+  (count (get-in (sparql/result->clj results) [:results :bindings])))
 
 (def tdb (tdb/create-bare))
 
@@ -39,11 +39,11 @@
             (update-books!)
             (triple-count (select-all))))
 
-(expect true (second (ask-book)))
+(expect true (ask-book))
 
-(expect true (not (nil? (sparql/model->json-ld (second (construct-books))))))
+(expect true (not (nil? (sparql/model->json-ld (construct-books)))))
 
-(expect true (not (nil? (sparql/model->rdf+xml (sparql/result->model (second (select-all)))))))
+(expect true (not (nil? (sparql/model->rdf+xml (sparql/result->model (select-all))))))
 
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"
@@ -51,7 +51,7 @@
 
 (expect {:type "literal", :value "A default book"}
         (:title (first (get-in
-                        (sparql/result->clj (second (select-book {:bindings {"book" (URI. "http://example/book0")}})))
+                        (sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
                         [:results :bindings]))))
 
 ;; Test with function override
@@ -63,7 +63,7 @@
   "yesparql/samples/with-comments.sparql"
   {:connection tdb})
 
-(expect true (not (nil? (second (select-foo)))))
+(expect true (not (nil? (select-foo))))
 
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select
@@ -74,3 +74,8 @@
         (triple-count
          (dbpedia-select {:timeout 500
                           :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+
+;; Test with-query-execution
+
+(expect true (not (nil? (sparql/with-query-execution [result (select-all)]
+                        (result->clj result)))))
