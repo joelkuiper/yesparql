@@ -32,10 +32,12 @@
   "yesparql/samples/construct.sparql"
   {:connection tdb})
 
+(expect 0 (triple-count (select-all)))
 
 ;; With 4 books
-(update-books)
-(expect 4 (triple-count (select-all)))
+(expect 4 (do
+            (update-books)
+            (triple-count (select-all))))
 
 (expect true (ask-book))
 
@@ -56,6 +58,13 @@
 (expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
         (select-all {:query-fn (fn [data-set statement call-options]  statement)}))
 
+;; Test with comments
+(defquery select-foo
+  "yesparql/samples/with-comments.sparql"
+  {:connection tdb})
+
+(expect true (not (nil? (select-foo))))
+
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select
   "yesparql/samples/remote-query.sparql"
@@ -63,5 +72,5 @@
 
 (expect 10
         (triple-count
-         (dbpedia-select {:timeout 250
+         (dbpedia-select {:timeout 500
                           :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
