@@ -112,43 +112,46 @@
 (defmethod query-exec Model [connection query] (query-exec* connection query))
 
 (defn- query-type
-  [q]
+  [^Query q]
   (cond
-    (.isSelectType q) "select"
-    (.isConstructType q) "construct"
-    (.isAskType q) "ask"
-    (.isDescribeType q) "describe"))
+    (.isSelectType q) "execSelect"
+    (.isConstructType q) "execConstruct"
+    (.isAskType q) "execAsk"
+    (.isDescribeType q) "execDescribe"))
 
 ;; TODO maybe use a macro or a protocol for this?
-(defmulti query* (fn [_ type] type))
-(defmethod query* "ask" [q-exec _] (.execAsk  ^QueryExecution q-exec))
-(defmethod query* "construct" [q-exec _] (.execConstruct ^QueryExecution q-exec))
-(defmethod query* "describe" [q-exec _] (.execDescribe ^QueryExecution q-exec))
-(defmethod query* "select" [q-exec _] (.execSelect ^QueryExecution q-exec))
+(defmulti query* (fn [q-exec] (query-type (.getQuery q-exec))))
+(defmethod query* "execAsk" [q-exec] (.execAsk  ^QueryExecution q-exec))
+(defmethod query* "execConstruct" [q-exec] (.execConstruct ^QueryExecution q-exec))
+(defmethod query* "execDescribe" [q-exec] (.execDescribe ^QueryExecution q-exec))
+(defmethod query* "execSelect" [q-exec] (.execSelect ^QueryExecution q-exec))
 
-
-(defn query
+(defn ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]} & [with-query-exec?]]
-  (let [^Query q (.asQuery (query-with-bindings pq bindings))
-        query-type (query-type q)
+  (let [^Query q (.asQuery pq)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
+    query-execution))
+
+(defn query
+  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options} & [with-query-exec?]]
+  (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)]
     (if with-query-exec?
       ;; This is the case for when called from within the `with-query-execution` macro.
       ;; In this case we return a tuple of [`QueryExecution` result].
       ;; The type of the second element, result, depends on the type of executed query.
       ;; and is one of {`ResultSet`, `Model`, `boolean`}.
       ;; In the case of a `ResultSet` a user can process it iteratively, as a stream.
-      [query-execution (query* query-execution query-type)]
+      [query-execution (query* query-execution)]
 
       ;; This is the default case and will consume the entire result
       ;; and subsequently close the `QueryExecution`.
       ;; This prevents resources from leaking, but is more memory intensive.
       ;; When the query result is a `ResultSet` we return a copy.
       (with-open [q-exec query-execution]
-        (if (= query-type "select")
-          (copy-result (query* query-execution query-type))
-          (query* query-execution query-type))))))
+        (if (= (query-type (.getQuery ^QueryExecution q-exec)) "execSelect")
+          (copy-result (query* query-execution))
+          (query* query-execution))))))
 
 
 (defmacro add-arg
