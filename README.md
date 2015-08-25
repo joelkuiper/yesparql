@@ -196,9 +196,9 @@ But, Clojure is a wonderful language, and if you are interested in learning we r
 - [The Joy of Clojure](http://www.amazon.com/Joy-Clojure-Michael-Fogus/dp/1617291412)
 
 ## Acknowledgments
-[Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
-[Jozef Wagner](https://github.com/wagjo)
-[Rick Moynihan](https://github.com/RickMoynihan)
+- [Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
+- [Jozef Wagner](https://github.com/wagjo)
+- [Rick Moynihan](https://github.com/RickMoynihan)
 
 ## License
 
