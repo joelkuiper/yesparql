@@ -63,7 +63,7 @@
   "yesparql/samples/with-comments.sparql"
   {:connection tdb})
 
-(expect true (not (nil? (select-foo))))
+(expect true (not (nil? (sparql/->result (select-foo)))))
 
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select
@@ -74,8 +74,3 @@
         (triple-count
          (dbpedia-select {:timeout 500
                           :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
-
-;; Test with-query-execution
-
-(expect true (not (nil? (sparql/with-query-execution [result (select-all)]
-                        (sparql/result->clj result)))))

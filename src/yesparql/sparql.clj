@@ -23,7 +23,9 @@
 (defn ^java.io.OutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
 
-(defn- reset-if-rewindable!
+(defn reset-if-rewindable!
+  "`ResultSet`s are consumed when iterated over this function resets
+  "
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
@@ -67,8 +69,14 @@
      (reset-if-rewindable! result)
      (.asModel rdf ^ResultSet result))))
 
-(defn copy-result
-  [result]
+(defn ->result
+  "Returns a copy of a `ResultSet` allowing it to be re-used.
+
+  Make sure to apply this function if you intend to re-use the
+  `ResultSet` after initial traversal.
+
+  See also: `reset-if-rewindable!`"
+  [^ResultSet result]
   (ResultSetFactory/copyResults result))
 
 (defn ^ParameterizedSparqlString parameterized-query
@@ -93,7 +101,6 @@
         (.setLiteral pq name resource)))
     bindings))
   pq)
-
 
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
@@ -127,7 +134,7 @@
 (defmethod query* "execSelect" [q-exec] (.execSelect ^QueryExecution q-exec))
 
 (defn ->execution
-  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]} & [with-query-exec?]]
+  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
   (let [^Query q (.asQuery pq)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
@@ -137,7 +144,7 @@
   java.lang.AutoCloseable
   (close [this] (.close qe))
   java.util.Iterator
-  (hasNext [this] (.hasNext rs)) ;; maybe autoclose if this returns false
+  (hasNext [this] (if (.hasNext rs) true (do (.close qe) false)))
   (next [this] (.next rs))
   (remove [this] (.remove rs))
   ;; JDK 8
@@ -150,23 +157,12 @@
   (nextSolution [this] (.nextSolution rs)))
 
 (defn query
-  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options} & [with-query-exec?]]
+  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)]
     (if (= (query-type (.getQuery ^QueryExecution query-execution)) "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
       (try (query* query-execution)
            (finally (.close query-execution))))))
-
-(defmacro add-arg
-  [fun arg]
-  (concat fun (cons arg '())))
-
-(defmacro with-query-execution
-  [binding & body]
-  `(let [[q-exec#  ~(first binding)] (add-arg ~(second binding) :with-query-exec?)]
-     (with-open [qe# q-exec#]
-       ~@body)))
-
 
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
@@ -181,7 +177,7 @@
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
   `connection` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [connection ^ParameterizedSparqlString pq {:keys [bindings]} & args]
+  [connection ^ParameterizedSparqlString pq {:keys [bindings]}]
   (let [q (.toString (.asUpdate (query-with-bindings pq bindings)))
         ^UpdateRequest update-request (UpdateFactory/create q)
         ^UpdateProcessor processor (update-exec connection update-request)]
