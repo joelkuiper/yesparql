@@ -130,7 +130,7 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
-- Names ending with `!` will perform a a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
+- Names ending with `!` will perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
 - All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask), [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select), [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct), or [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
 
 
@@ -171,7 +171,7 @@ The result can be consumed iteratively (lazily, it implements [`Iterator`](https
 The result will automatically close if all the `QuerySolution`s in the Iterator have been consumed.
 If a result has to be traversed multiple times use the `->result` function, which generates a rewindable copy of the entire `ResultSet`.
 
-**WARNING**: while it is completely possible to not close the result, it will leak resources and is not advicable.
+**WARNING**: while it is completely possible to not close the result, it will leak resources and is not advisable.
 
 
 Note that it is not a primary goal to provide a full native Clojure wrapper.
