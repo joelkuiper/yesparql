@@ -68,10 +68,10 @@
      (.asModel rdf ^ResultSet result))))
 
 (defn copy-result
-  [^ResultSet result]
+  [result]
   (ResultSetFactory/copyResults result))
 
-(defn parameterized-query
+(defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
   (ParameterizedSparqlString. statement))
 
