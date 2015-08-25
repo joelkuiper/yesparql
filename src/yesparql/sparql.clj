@@ -151,13 +151,13 @@
           (query* query-execution query-type))))))
 
 
-(defmacro add-kw
-  [fun kw]
-  (concat fun (cons kw '())))
+(defmacro add-arg
+  [fun arg]
+  (concat fun (cons arg '())))
 
 (defmacro with-query-execution
   [binding & body]
-  `(let [[q-exec#  ~(first binding)] (add-kw ~(second binding) :with-query-exec?)]
+  `(let [[q-exec#  ~(first binding)] (add-arg ~(second binding) :with-query-exec?)]
      (with-open [qe# q-exec#]
        ~@body)))
 
