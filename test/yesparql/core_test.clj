@@ -13,7 +13,7 @@
   [results]
   (count (get-in (sparql/result->clj results) [:results :bindings])))
 
-(def tdb (tdb/create-bare))
+(def tdb (tdb/create-in-memory))
 
 
 (defquery select-all
