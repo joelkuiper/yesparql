@@ -83,12 +83,12 @@ These bindings get inserted into the query using a [Parameterized SPARQL String]
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
-(def result (select-intellectuals
-             {:bindings
-              {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}}))
 
-(with-open [r result]
-  (print (result->csv r)))
+(print
+ (result->csv
+  (select-intellectuals
+   {:bindings
+    {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
 
 ;=> person
 ;=> http://dbpedia.org/resource/Bernard_Lyot
@@ -167,9 +167,12 @@ YeSPARQL offers various functions to transform these types to other serializatio
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
 Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/).
-The result can be consumed iteratively (lazily, it implements [`Iterator`](https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html)), or as a whole with one of the various transformers like `result->clj`. Note that the latter might require a lot of memory.
-The result will automatically close if all the `QuerySolution`s in the Iterator have been consumed.
-If a result has to be traversed multiple times use the `->result` function, which generates a rewindable copy of the entire `ResultSet`. See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
+The result can be consumed iteratively (lazily, it implements [`Iterator`](https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html)), or as a whole with one of the various transformers like `result->clj`. Note that the latter requires more memory.
+
+The result will automatically close if all the `QuerySolution`s in the Iterator have been consumed (e.g. after `result->csv`).
+If a result has to be traversed multiple times use the `->result` function, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
+
+See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
 
 **WARNING**: while it is completely possible to not close the result, it will leak resources and is not advisable.
 

@@ -156,6 +156,7 @@
   (nextBinding [this] (.nextBinding rs))
   (nextSolution [this] (.nextSolution rs)))
 
+
 (defn query
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)]
