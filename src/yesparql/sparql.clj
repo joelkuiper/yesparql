@@ -133,26 +133,29 @@
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
 
+(deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
+  java.lang.AutoCloseable
+  (close [this] (.close qe))
+  java.util.Iterator
+  (hasNext [this] (.hasNext rs)) ;; maybe autoclose if this returns false
+  (next [this] (.next rs))
+  (remove [this] (.remove rs))
+  ;; JDK 8
+  (forEachRemaining [this action] (.forEachRemaining rs action))
+  ResultSet
+  (getResourceModel [this] (.getResourceModel rs))
+  (getResultVars [this] (.getResultVars rs))
+  (getRowNumber [this] (.getRowNumber rs))
+  (nextBinding [this] (.nextBinding rs))
+  (nextSolution [this] (.nextSolution rs)))
+
 (defn query
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options} & [with-query-exec?]]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)]
-    (if with-query-exec?
-      ;; This is the case for when called from within the `with-query-execution` macro.
-      ;; In this case we return a tuple of [`QueryExecution` result].
-      ;; The type of the second element, result, depends on the type of executed query.
-      ;; and is one of {`ResultSet`, `Model`, `boolean`}.
-      ;; In the case of a `ResultSet` a user can process it iteratively, as a stream.
-      [query-execution (query* query-execution)]
-
-      ;; This is the default case and will consume the entire result
-      ;; and subsequently close the `QueryExecution`.
-      ;; This prevents resources from leaking, but is more memory intensive.
-      ;; When the query result is a `ResultSet` we return a copy.
-      (with-open [q-exec query-execution]
-        (if (= (query-type (.getQuery ^QueryExecution q-exec)) "execSelect")
-          (copy-result (query* query-execution))
-          (query* query-execution))))))
-
+    (if (= (query-type (.getQuery ^QueryExecution query-execution)) "execSelect")
+      (->CloseableResultSet query-execution (query* query-execution))
+      (try (query* query-execution)
+           (finally (.close query-execution))))))
 
 (defmacro add-arg
   [fun arg]
