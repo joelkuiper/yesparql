@@ -14,8 +14,8 @@
         (cond
           (= (last name) \!) sparql/update
           :else sparql/query)]
-    (fn [connection query call-options & [with-query-exec?]]
-      (sparql-fn connection query call-options with-query-exec?))))
+    (fn [connection query call-options & [with-query-execution?]]
+      (sparql-fn connection query call-options with-query-execution?))))
 
 (defn- connection-error
   [name]
@@ -41,11 +41,11 @@
         query (sparql/parameterized-query statement)
         default-handler (or (:query-fn query-options) (statement-handler name query))
         real-fn
-        (fn [call-options & [with-query-exec?]]
+        (fn [call-options & [with-query-execution?]]
           (let [handler-fn (or (:query-fn call-options) default-handler)
                 connection (or (:connection call-options) global-connection)]
             (assert connection (connection-error name))
-            (handler-fn connection (.copy query false) call-options with-query-exec?)))
+            (handler-fn connection (.copy query false) call-options with-query-execution?)))
         [display-args generated-fn]
         (let [global-args {:keys ['connection 'bindings]}]
           [(list [] [global-args])
