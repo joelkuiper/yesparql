@@ -162,16 +162,16 @@
        ~@body)))
 
 
-(defmulti update-exec (fn [data-set _] (class data-set)))
-(defmethod update-exec String [data-set update]
-  (UpdateExecutionFactory/createRemote update ^String data-set))
-(defmethod update-exec Dataset [data-set update]
-  (UpdateExecutionFactory/create update ^Dataset data-set))
-(defmethod update-exec DatasetGraph [data-set update]
-  (UpdateExecutionFactory/create update ^DatasetGraph data-set))
+(defmulti update-exec (fn [connection _] (class connection)))
+(defmethod update-exec String [connection update]
+  (UpdateExecutionFactory/createRemote update ^String connection))
+(defmethod update-exec Dataset [connection update]
+  (UpdateExecutionFactory/create update ^Dataset connection))
+(defmethod update-exec DatasetGraph [connection update]
+  (UpdateExecutionFactory/create update ^DatasetGraph connection))
 
 (defn update
-  "Execute a SPARQL UPDATE `query` against the `data-set`,
+  "Execute a SPARQL UPDATE `query` against the `connection`,
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
   `connection` can be a String for a SPARQL endpoint URL or `Dataset`"
