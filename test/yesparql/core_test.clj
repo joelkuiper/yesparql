@@ -56,7 +56,7 @@
 
 ;; Test with function override
 (expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
-        (select-all {:query-fn (fn [data-set query call-options]  (str query))}))
+        (select-all {:query-fn (fn [data-set query call-options & args]  (str query))}))
 
 ;; Test with comments
 (defquery select-foo
@@ -78,4 +78,4 @@
 ;; Test with-query-execution
 
 (expect true (not (nil? (sparql/with-query-execution [result (select-all)]
-                        (result->clj result)))))
+                        (sparql/result->clj result)))))

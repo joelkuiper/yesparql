@@ -128,12 +128,12 @@
 
 
 (defn query
-  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]} & [transactional?]]
+  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]} & [with-query-exec?]]
   (let [^Query q (.asQuery (query-with-bindings pq bindings))
         query-type (query-type q)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
-    (if transactional?
+    (if with-query-exec?
       ;; This is the case for when called from within the `with-query-execution` macro.
       ;; In this case we return a tuple of [`QueryExecution` result].
       ;; The type of the second element, result, depends on the type of executed query.
@@ -155,10 +155,9 @@
   [fun kw]
   (concat fun (cons kw '())))
 
-
 (defmacro with-query-execution
   [binding & body]
-  `(let [[q-exec#  ~(first binding)] (add-kw ~(second binding) :with-query-exec)]
+  `(let [[q-exec#  ~(first binding)] (add-kw ~(second binding) :with-query-exec?)]
      (with-open [qe# q-exec#]
        ~@body)))
 
@@ -176,7 +175,7 @@
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
   `connection` can be a String for a SPARQL endpoint URL or `Dataset`"
-  [connection ^ParameterizedSparqlString pq {:keys [bindings]}]
+  [connection ^ParameterizedSparqlString pq {:keys [bindings]} & args]
   (let [q (.toString (.asUpdate (query-with-bindings pq bindings)))
         ^UpdateRequest update-request (UpdateFactory/create q)
         ^UpdateProcessor processor (update-exec connection update-request)]
