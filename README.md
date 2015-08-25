@@ -166,8 +166,6 @@ YeSPARQL offers various functions to transform these types to other serializatio
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
-
-```
 Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/).
 The result can be consumed iteratively (lazily, it implements [`Iterable`](https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html)), or as a whole with one of the various transformers like `result->clj`. Note that the latter might require a lot of memory.
 The result will automatically close if all the `QuerySolution`s in the Iterator have been consumed.
