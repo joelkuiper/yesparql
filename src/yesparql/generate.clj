@@ -31,7 +31,7 @@
    - otherwise a SPARQL QUERY will be executed.
 
    [FOR TESTING] you can override this behavior by passing a `:query-fn` at call or query time.
-   `query-fn` is a function with the signature `[data-set query call-options]` and will be used instead."
+   `query-fn` is a function with the signature `[data-set pq call-options & args]` and will be used instead."
   [{:keys [name docstring statement]
     :as query}
    query-options]

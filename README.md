@@ -163,8 +163,8 @@ YeSPARQL offers various functions to transform these types to other serializatio
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
 Note that performing `SELECT` queries this way requires the entire [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) to be consumed, on top of which a copy is returned with
-`ResultSetFactory/copyResults` in order to use the result outside of the function.
-This can be very memory intensive, to consume the `ResultSet` in an iterative (/streaming) way you can use the `with-query-execution` macro.
+`ResultSetFactory/copyResults` in order to make the result usable outside of the function.
+This can be memory intensive, thus to consume the `ResultSet` in an iterative (/streaming) way you can use the `with-query-execution` macro.
 
 ```clojure
 (with-query-execution [result (select-intellectuals)]
