@@ -122,7 +122,11 @@
   {:value (.getLiteralValue literal)})
 
 (defmethod node->clj :default [^Node_Literal literal]
-  (with-type #(.getLiteralValue %) literal))
+  (try
+    (with-type #(.getLiteralValue %) literal)
+    (catch org.apache.jena.shared.JenaException e
+      {:value (.getLiteralLexicalForm literal)
+       :type (.getLiteralDatatypeURI literal)})))
 
 (defprotocol INodeConvertible
   (convert [^Node this]))
