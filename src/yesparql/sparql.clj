@@ -27,8 +27,6 @@
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
-  "`ResultSet`s are consumed when iterated over this function resets
-  "
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
