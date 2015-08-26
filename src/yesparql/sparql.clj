@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [update])
   (:require [cheshire.core :as json])
   (:import
+   [clojure.lang.Reflector]
    [java.net URL URI]
    [org.apache.jena.graph Node]
    [org.apache.jena.update
@@ -203,12 +204,13 @@
     (.isAskType q) "execAsk"
     (.isDescribeType q) "execDescribe"))
 
-;; TODO maybe use a macro or a protocol for this?
-(defmulti query* (fn [q-exec] (query-type (.getQuery q-exec))))
-(defmethod query* "execAsk" [^QueryExecution q-exec] (.execAsk q-exec))
-(defmethod query* "execConstruct" [^QueryExecution q-exec] (.execConstruct q-exec))
-(defmethod query* "execDescribe" [^QueryExecution q-exec] (.execDescribe q-exec))
-(defmethod query* "execSelect" [^QueryExecution q-exec] (.execSelect q-exec))
+
+(defn query*
+  [^QueryExecution q-exec]
+  (clojure.lang.Reflector/invokeInstanceMethod
+   q-exec
+   (query-type (.getQuery q-exec)) (object-array 0)))
+
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
