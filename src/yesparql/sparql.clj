@@ -44,7 +44,7 @@
 (defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
 (defn model->ttl [^Model model] (serialize-model model "TTL"))
 (defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
-
+(defn model->clj [^Model model] (json/decode (model->json-ld model) true))
 
 ;; Serialize ResultSet
 (defmacro serialize-result
