@@ -57,20 +57,22 @@
          (.toString output# "UTF-8"))
        (finally (.close output#)))))
 
-(defn result->json [result] (serialize-result ResultSetFormatter/outputAsJSON result))
-(defn result->xml [result] (serialize-result ResultSetFormatter/outputAsXML result))
-(defn result->csv [result] (serialize-result ResultSetFormatter/outputAsCSV result))
-(defn result->tsv [result] (serialize-result ResultSetFormatter/outputAsTSV result))
+(defn result->json [^ResultSet result] (serialize-result ResultSetFormatter/outputAsJSON result))
+(defn result->text [^ResultSet result] (ResultSetFormatter/asText result))
+
+(defn result->xml [^ResultSet result] (serialize-result ResultSetFormatter/outputAsXML result))
+(defn result->csv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsCSV result))
+(defn result->tsv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
 (defn result->clj
-  ([result]
-   (json/decode (result->json ^ResultSet result) true)))
+  [^ResultSet result]
+  (json/decode (result->json result) true))
 
 (defn result->model
-  ([result]
-   (let [^RDFOutput rdf (RDFOutput.)]
-     (reset-if-rewindable! result)
-     (.asModel rdf ^ResultSet result))))
+  [^ResultSet result]
+  (let [^RDFOutput rdf (RDFOutput.)]
+    (reset-if-rewindable! result)
+    (.asModel rdf ^ResultSet result)))
 
 (defn copy-result-set
   "Returns a copy of a `ResultSet` allowing it to be re-used.
@@ -157,7 +159,7 @@
 (defn statements->clj
   [^Statement s]
   (let [^org.apache.jena.graph.Triple t (.asTriple s)]
-    (->Triple (convert (.getSubject t)) (convert (.getPredicate t)) (convert (.getObject t)))))
+    (apply ->Triple (map convert [(.getSubject t) (.getPredicate t) (.getObject t)]))))
 
 (deftype CloseableModel [^QueryExecution qe ^Model m]
   clojure.lang.Seqable
