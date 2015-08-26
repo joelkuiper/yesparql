@@ -113,51 +113,51 @@
     {:type (.getLiteralDatatypeURI literal)
      :value (f literal)}))
 
-(defmulti literal->type (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
+(defmulti node->type (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
 
-(defmethod literal->type nil [^Node_Literal literal]
+(defmethod node->type nil [^Node_Literal literal]
   (.getLiteralValue literal))
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#byte" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#byte" [^Node_Literal literal]
   (with-type #(byte (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#short" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#short" [^Node_Literal literal]
   (with-type #(short (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#decimal" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#decimal" [^Node_Literal literal]
   (with-type #(float (.getLiteralValue %)) literal)) ;; ???
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#double" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#double" [^Node_Literal literal]
   (with-type #(double (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#integer" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#integer" [^Node_Literal literal]
   (with-type #(int (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#int" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#int" [^Node_Literal literal]
   (with-type #(int (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/2001/XMLSchema#float" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/2001/XMLSchema#float" [^Node_Literal literal]
   (with-type #(float (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Node_Literal literal]
   (with-type #(str (.getLiteralValue %)) literal))
 
-(defmethod literal->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [^Node_Literal literal]
+(defmethod node->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [^Node_Literal literal]
   (with-type #(str (.getLiteralValue %)) literal))
 
-(defmethod literal->type :default [^Node_Literal literal]
+(defmethod node->type :default [^Node_Literal literal]
   (if-let [c (.getJavaClass (.getLiteralDatatype literal))]
     (with-type #(cast c (.getLiteralValue %)) literal)
     (with-type #(.getLiteralValue %) literal)))
 
-(defprotocol ILiteralConvertable
+(defprotocol INodeConvertible
   (convert [^Node this]))
 
-(extend-protocol ILiteralConvertable
+(extend-protocol INodeConvertible
   org.apache.jena.graph.Node_Blank
   (convert [this] (.getBlankNodeId this))
   org.apache.jena.graph.Node_Literal
-  (convert [this] (literal->type this))
+  (convert [this] (node->type this))
   org.apache.jena.graph.Node_NULL
   (convert [this] nil)
   org.apache.jena.graph.Node_URI
