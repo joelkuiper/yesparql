@@ -143,21 +143,15 @@
     (into {} (map (fn [v] [(.getVarName v) (convert (.get binding v))])
                   (iterator-seq (.vars binding))))))
 
-(defprotocol IQueryExecutionAccessible
-  (->query-execution [this]))
-
-(defprotocol IResultSetAccessible
-  (->result [this]))
-
 (deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
-  IResultSetAccessible
-  (->result [_] rs)
-  IQueryExecutionAccessible
-  (->query-execution [_] qe)
   clojure.lang.Seqable
   (seq [_] (map result-binding->type (iterator-seq rs)))
   java.lang.AutoCloseable
   (close [_] (.close qe)))
+
+(defn ->query-execution [t] (.qe t))
+(defn ->result [^ResultSet r] (.rs r))
+
 
 (defrecord Quad [g s p o])
 (defrecord Triple [s p o])
@@ -167,18 +161,13 @@
   (let [^org.apache.jena.graph.Triple t (.asTriple s)]
     (->Triple (convert (.getSubject t)) (convert (.getPredicate t)) (convert (.getObject t)))))
 
-(defprotocol IModelAccessible
-  (->model [this]))
-
 (deftype ClosableModel [^QueryExecution qe ^Model m]
-  IModelAccessible
-  (->model [_] m)
-  IQueryExecutionAccessible
-  (->query-execution [_] qe)
   clojure.lang.Seqable
   (seq [this] (map statements->clj (iterator-seq (.listStatements m))))
   java.lang.AutoCloseable
   (close [this] (.close qe)))
+
+(defn ->model [^CloseableResultSet m] (.m m))
 
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
@@ -186,7 +175,7 @@
    ^String connection
    ^Query query))
 
-(defn query-exec*
+(defn- query-exec*
   [connection query]
   (QueryExecutionFactory/create
    ^Query query
@@ -204,13 +193,11 @@
     (.isAskType q) "execAsk"
     (.isDescribeType q) "execDescribe"))
 
-
 (defn query*
   [^QueryExecution q-exec]
   (clojure.lang.Reflector/invokeInstanceMethod
    q-exec
    (query-type (.getQuery q-exec)) (object-array 0)))
-
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
