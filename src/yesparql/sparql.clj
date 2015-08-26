@@ -120,9 +120,7 @@
   {:value (.getLiteralValue literal)})
 
 (defmethod node->clj :default [^Node_Literal literal]
-  (if-let [c (.getJavaClass (.getLiteralDatatype literal))]
-    (with-type #(cast c (.getLiteralValue %)) literal)
-    (with-type #(.getLiteralValue %) literal)))
+  (with-type #(.getLiteralValue %) literal))
 
 (defprotocol INodeConvertible
   (convert [^Node this]))
