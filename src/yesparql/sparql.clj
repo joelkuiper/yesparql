@@ -116,34 +116,7 @@
 (defmulti node->clj (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
 
 (defmethod node->clj nil [^Node_Literal literal]
-  (.getLiteralValue literal))
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#byte" [^Node_Literal literal]
-  (with-type #(byte (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#short" [^Node_Literal literal]
-  (with-type #(short (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#decimal" [^Node_Literal literal]
-  (with-type #(float (.getLiteralValue %)) literal)) ;; ???
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#double" [^Node_Literal literal]
-  (with-type #(double (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#integer" [^Node_Literal literal]
-  (with-type #(int (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#int" [^Node_Literal literal]
-  (with-type #(int (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/2001/XMLSchema#float" [^Node_Literal literal]
-  (with-type #(float (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/TR/xmlschema11-2/#string" [^Node_Literal literal]
-  (with-type #(str (.getLiteralValue %)) literal))
-
-(defmethod node->clj "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [^Node_Literal literal]
-  (with-type #(str (.getLiteralValue %)) literal))
+  {:value (.getLiteralValue literal)})
 
 (defmethod node->clj :default [^Node_Literal literal]
   (if-let [c (.getJavaClass (.getLiteralDatatype literal))]

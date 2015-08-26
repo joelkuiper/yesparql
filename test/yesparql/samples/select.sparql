@@ -1,8 +1,8 @@
 -- Default query selecting 25 triples
 
 
-SELECT ?subject ?predicate ?object
+SELECT ?graph ?subject ?predicate ?object
 WHERE {
-  ?subject ?predicate ?object
+  GRAPH ?graph { ?subject ?predicate ?object }
 }
 LIMIT 25
