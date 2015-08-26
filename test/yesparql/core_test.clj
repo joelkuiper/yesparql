@@ -4,14 +4,14 @@
             [expectations :refer :all]
 
             [yesparql.tdb :as tdb]
-            [yesparql.sparql :as sparql]
+            [yesparql.sparql :refer :all]
             [yesparql.core :refer :all]))
 
 ;; Test in-memory SPARQL
 
 (defn triple-count
   [results]
-  (count (get-in (sparql/result->clj results) [:results :bindings])))
+  (count (get-in (result->clj (->result results)) [:results :bindings])))
 
 (def tdb (tdb/create-in-memory))
 
@@ -41,9 +41,9 @@
 
 (expect true (ask-book))
 
-(expect true (not (nil? (sparql/model->json-ld (construct-books)))))
+(expect true (not (nil? (model->json-ld (->model (construct-books))))))
 
-(expect true (not (nil? (sparql/model->rdf+xml (sparql/result->model (select-all))))))
+(expect true (not (nil? (model->rdf+xml (result->model (->result (select-all)))))))
 
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"
@@ -51,7 +51,7 @@
 
 (expect {:type "literal", :value "A default book"}
         (:title (first (get-in
-                        (sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
+                        (result->clj (->result (select-book {:bindings {"book" (URI. "http://example/book0")}})))
                         [:results :bindings]))))
 
 ;; Test with function override
@@ -63,7 +63,7 @@
   "yesparql/samples/with-comments.sparql"
   {:connection tdb})
 
-(expect true (not (nil? (sparql/->result (select-foo)))))
+(expect true (not (nil? (->result (select-foo)))))
 
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select
@@ -74,3 +74,7 @@
         (triple-count
          (dbpedia-select {:timeout 500
                           :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+
+(defquery drugbank
+  "yesparql/samples/drugbank.sparql"
+  {:connection "http://drugbank.bio2rdf.org/sparql"})

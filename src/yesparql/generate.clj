@@ -12,7 +12,7 @@
   [^String name ^ParameterizedSparqlString query]
   (let [sparql-fn
         (cond
-          (= (last name) \!) sparql/update
+          (= (last name) \!) sparql/update!
           :else sparql/query)]
     (fn [connection query call-options]
       (sparql-fn connection query call-options))))

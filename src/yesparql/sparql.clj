@@ -9,10 +9,12 @@
     UpdateFactory UpdateProcessor
     UpdateRequest UpdateExecutionFactory]
    [org.apache.jena.rdf.model Model
+    StmtIterator Statement Resource Property
     RDFNode Resource Literal]
    [org.apache.jena.query Dataset]
    [org.apache.jena.sparql.core DatasetGraph]
    [org.apache.jena.sparql.resultset RDFOutput]
+   [ org.apache.jena.graph Node Node_Literal Node_Blank Node_NULL Node_URI]
    [org.apache.jena.query
     Query QuerySolution QueryExecution
     QueryExecutionFactory QueryFactory QuerySolutionMap
@@ -69,7 +71,7 @@
      (reset-if-rewindable! result)
      (.asModel rdf ^ResultSet result))))
 
-(defn ->result
+(defn copy-result-set
   "Returns a copy of a `ResultSet` allowing it to be re-used.
 
   Make sure to apply this function if you intend to re-use the
@@ -102,6 +104,108 @@
     bindings))
   pq)
 
+(defn- with-type
+  [f ^Node_Literal literal]
+  (if-let [lang (if (empty? (.getLiteralLanguage literal)) false (.getLiteralLanguage literal))]
+    {:type (.getLiteralDatatypeURI literal)
+     :value (f literal)
+     :lang (str "@" lang)}
+    {:type (.getLiteralDatatypeURI literal)
+     :value (f literal)}))
+
+(defmulti literal->type (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
+
+(defmethod literal->type nil [^Node_Literal literal]
+  (.getLiteralValue literal))
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#byte" [^Node_Literal literal]
+  (with-type #(byte (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#short" [^Node_Literal literal]
+  (with-type #(short (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#decimal" [^Node_Literal literal]
+  (with-type #(float (.getLiteralValue %)) literal)) ;; ???
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#double" [^Node_Literal literal]
+  (with-type #(double (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#integer" [^Node_Literal literal]
+  (with-type #(int (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#int" [^Node_Literal literal]
+  (with-type #(int (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/2001/XMLSchema#float" [^Node_Literal literal]
+  (with-type #(float (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Node_Literal literal]
+  (with-type #(str (.getLiteralValue %)) literal))
+
+(defmethod literal->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [^Node_Literal literal]
+  (with-type #(str (.getLiteralValue %)) literal))
+
+(defmethod literal->type :default [^Node_Literal literal]
+  (if-let [c (.getJavaClass (.getLiteralDatatype literal))]
+    (with-type #(cast c (.getLiteralValue %)) literal)
+    (with-type #(.getLiteralValue %) literal)))
+
+(defprotocol ILiteralConvertable
+  (convert [^Node this]))
+
+(extend-protocol ILiteralConvertable
+  org.apache.jena.graph.Node_Blank
+  (convert [this] (.getBlankNodeId this))
+  org.apache.jena.graph.Node_Literal
+  (convert [this] (literal->type this))
+  org.apache.jena.graph.Node_NULL
+  (convert [this] nil)
+  org.apache.jena.graph.Node_URI
+  (convert [this] (.getURI this)))
+
+(defn- result-binding->type
+  [^org.apache.jena.sparql.core.ResultBinding result-binding]
+  (let [binding (.getBinding result-binding)]
+    (into {} (map (fn [v] [(.getVarName v) (convert (.get binding v))])
+                  (iterator-seq (.vars binding))))))
+
+(defprotocol IQueryExecutionAccessible
+  (->query-execution [this]))
+
+(defprotocol IResultSetAccessible
+  (->result [this]))
+
+(deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
+  IResultSetAccessible
+  (->result [_] rs)
+  IQueryExecutionAccessible
+  (->query-execution [_] qe)
+  clojure.lang.Seqable
+  (seq [_] (map result-binding->type (iterator-seq rs)))
+  java.lang.AutoCloseable
+  (close [_] (.close qe)))
+
+(defrecord Quad [g s p o])
+(defrecord Triple [s p o])
+
+(defn statements->type
+  [^Statement s]
+  (let [^org.apache.jena.graph.Triple t (.asTriple s)]
+    (->Triple (convert (.getSubject t)) (convert (.getPredicate t)) (convert (.getObject t)))))
+
+(defprotocol IModelAccessible
+  (->model [this]))
+
+(deftype ClosableModel [^QueryExecution qe ^Model m]
+  IModelAccessible
+  (->model [_] m)
+  IQueryExecutionAccessible
+  (->query-execution [_] qe)
+  clojure.lang.Seqable
+  (seq [this] (map statements->type (iterator-seq (.listStatements m))))
+  java.lang.AutoCloseable
+  (close [this] (.close qe)))
+
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
   (QueryExecutionFactory/sparqlService
@@ -128,10 +232,10 @@
 
 ;; TODO maybe use a macro or a protocol for this?
 (defmulti query* (fn [q-exec] (query-type (.getQuery q-exec))))
-(defmethod query* "execAsk" [q-exec] (.execAsk  ^QueryExecution q-exec))
-(defmethod query* "execConstruct" [q-exec] (.execConstruct ^QueryExecution q-exec))
-(defmethod query* "execDescribe" [q-exec] (.execDescribe ^QueryExecution q-exec))
-(defmethod query* "execSelect" [q-exec] (.execSelect ^QueryExecution q-exec))
+(defmethod query* "execAsk" [^QueryExecution q-exec] (.execAsk q-exec))
+(defmethod query* "execConstruct" [^QueryExecution q-exec] (.execConstruct q-exec))
+(defmethod query* "execDescribe" [^QueryExecution q-exec] (.execDescribe q-exec))
+(defmethod query* "execSelect" [^QueryExecution q-exec] (.execSelect q-exec))
 
 (defn ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
@@ -140,28 +244,17 @@
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
 
-(deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
-  java.lang.AutoCloseable
-  (close [this] (.close qe))
-  java.util.Iterator
-  (hasNext [this] (if (.hasNext rs) true (do (.close qe) false)))
-  (next [this] (.next rs))
-  (remove [this] (.remove rs))
-  ;; JDK 8
-  (forEachRemaining [this action] (.forEachRemaining rs action))
-  ResultSet
-  (getResourceModel [this] (.getResourceModel rs))
-  (getResultVars [this] (.getResultVars rs))
-  (getRowNumber [this] (.getRowNumber rs))
-  (nextBinding [this] (.nextBinding rs))
-  (nextSolution [this] (.nextSolution rs)))
-
 
 (defn query
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
-  (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)]
-    (if (= (query-type (.getQuery ^QueryExecution query-execution)) "execSelect")
+  (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
+        query-type (query-type (.getQuery ^QueryExecution query-execution))]
+    (cond
+      (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
+      (or (= query-type "execDescribe") (= query-type "execConstruct"))
+      (->ClosableModel query-execution (query* query-execution))
+      :else
       (try (query* query-execution)
            (finally (.close query-execution))))))
 
@@ -173,7 +266,7 @@
 (defmethod update-exec DatasetGraph [connection update]
   (UpdateExecutionFactory/create update ^DatasetGraph connection))
 
-(defn update
+(defn update!
   "Execute a SPARQL UPDATE `query` against the `connection`,
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
