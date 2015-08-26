@@ -44,7 +44,7 @@
 (defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
 (defn model->ttl [^Model model] (serialize-model model "TTL"))
 (defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
-
+(defn model->clj [^Model model] (json/decode (model->json-ld model) true))
 
 ;; Serialize ResultSet
 (defmacro serialize-result
@@ -141,7 +141,7 @@
   org.apache.jena.graph.Node_URI
   (convert [this] (.getURI this)))
 
-(defn- result-binding->type
+(defn- result-binding->clj
   [^org.apache.jena.sparql.core.ResultBinding result-binding]
   (let [binding (.getBinding result-binding)]
     (into {} (map (fn [v] [(.getVarName v) (convert (.get binding v))])
@@ -149,13 +149,12 @@
 
 (deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
   clojure.lang.Seqable
-  (seq [_] (map result-binding->type (iterator-seq rs)))
+  (seq [_] (map result-binding->clj (iterator-seq rs)))
   java.lang.AutoCloseable
   (close [_] (.close qe)))
 
 (defn ->query-execution [t] (.qe t))
 (defn ->result [^ResultSet r] (.rs r))
-
 
 (defrecord Quad [g s p o])
 (defrecord Triple [s p o])
