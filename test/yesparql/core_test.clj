@@ -13,14 +13,14 @@
   [results]
   (count (get-in (sparql/result->clj results) [:results :bindings])))
 
-(def tdb (tdb/create-bare))
+(def tdb (tdb/create-in-memory))
 
 
 (defquery select-all
   "yesparql/samples/select.sparql"
   {:connection tdb})
 
-(defquery update-books
+(defquery update-books!
   "yesparql/samples/update.sparql"
   {:connection tdb})
 
@@ -32,10 +32,12 @@
   "yesparql/samples/construct.sparql"
   {:connection tdb})
 
+(expect 0 (triple-count (select-all)))
 
 ;; With 4 books
-(update-books)
-(expect 4 (triple-count (select-all)))
+(expect 4 (do
+            (update-books!)
+            (triple-count (select-all))))
 
 (expect true (ask-book))
 
@@ -52,12 +54,23 @@
                         (sparql/result->clj (select-book {:bindings {"book" (URI. "http://example/book0")}}))
                         [:results :bindings]))))
 
-;; Test remote SPARQL endpoints
+;; Test with function override
+(expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
+        (select-all {:query-fn (fn [data-set query call-options & args]  (str query))}))
 
+;; Test with comments
+(defquery select-foo
+  "yesparql/samples/with-comments.sparql"
+  {:connection tdb})
+
+(expect true (not (nil? (sparql/->result (select-foo)))))
+
+;; Test remote SPARQL endpoints
 (defquery dbpedia-select
   "yesparql/samples/remote-query.sparql"
   {:connection "http://dbpedia.org/sparql"})
 
 (expect 10
         (triple-count
-         (dbpedia-select {:bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+         (dbpedia-select {:timeout 500
+                          :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))

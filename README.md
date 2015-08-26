@@ -12,7 +12,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.1.4"]
+[yesparql "0.1.5"]
 ```
 
 ## What's the point?
@@ -73,8 +73,9 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ;=> Example dbpedia query, returning intellectuals restricted by subject
 ;=> Endpoint: http://dbpedia.org/sparql
 
-;; Running the query is as easy as calling the function
-(select-intellectuals)
+;; Running the query is as easy as calling the function in a with-open
+(with-open [result (select-intellectuals)]
+  (do-something-with-result!))
 ```
 
 In addition, you can supply bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
@@ -82,8 +83,9 @@ These bindings get inserted into the query using a [Parameterized SPARQL String]
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
+
 (print
- (sparql/result->csv
+ (result->csv
   (select-intellectuals
    {:bindings
     {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
@@ -101,6 +103,15 @@ A complete example of running a SPARQL SELECT against DBPedia, with initial bind
 ;=> http://dbpedia.org/resource/Andrew_Lawson
 ```
 
+### One file, Many Queries
+[Same as Yesql](https://github.com/krisajenkins/yesql#one-file-many-queries)
+
+### [SPARQL Injection Notes](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ParameterizedSparqlString.html)
+
+While `ParameterizedSparqlString` was in part designed to prevent SPARQL injection it is by no means foolproof because it works purely at the textual level. The current version of the code addresses some possible attack vectors that the developers have identified but we do not claim to be sufficiently devious to have thought of and prevented every possible attack vector.
+
+Therefore we strongly recommend that users concerned about SPARQL Injection attacks perform their own validation on provided parameters and test their use of this class themselves prior to its use in any security conscious deployment. We also recommend that users do not use easily guess-able variable names for their parameters as these can allow a chained injection attack, though generally speaking the code should prevent these.
+
 ### TDB
 In addition to supplying a SPARQL Endpoint URL, you can also supply a TDB `Dataset`.
 The `yesparql.tdb` namespace provides convenience methods for constructing these.
@@ -116,17 +127,12 @@ The `yesparql.tdb` namespace provides convenience methods for constructing these
 
 ```
 
-### One file, Many Queries
-[Same as Yesql](https://github.com/krisajenkins/yesql#one-file-many-queries)
-
 ### Query types
 Since SPARQL has multiple query types we consider the following syntax for the query names:
 
-- Names starting with `select` (e.g. `select-intellectuals`) perform a [SPARQL SELECT](http://www.w3.org/TR/rdf-sparql-query/#select)
-- Names starting with `update` or ending with `!`  perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
-- Names starting with `ask` or ending with `?`  perform a [SPARQL ASK](http://www.w3.org/TR/rdf-sparql-query/#ask)
-- Names starting with `construct` perform a [SPARQL CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct)
-- Names starting with `describe` perform a [SPARQL DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe)
+- Names ending with `!` will perform a [SPARQL UPDATE](http://www.w3.org/TR/sparql11-update/)
+- All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask), [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select), [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct), or [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
+
 
 ### Results processing
 Each of the executed queries returns its native [Apace Jena](https://jena.apache.org/) [ResultSet](https://jena.apache.org/documentation/javadoc/arq/) or [Model](https://jena.apache.org/documentation/javadoc/jena/) (depending on the type of query).
@@ -137,7 +143,9 @@ YeSPARQL offers various functions to transform these types to other serializatio
 
 (require '[yesparql.sparql :as sparql])
 
-(def result (select-intellectuals))
+(def result
+  (with-open [result (select-intellectuals)]
+    (->result result)
 
 (sparql/result->clj result) ; converts to a Clojure map using the JSON serialization
 (sparql/result->json result)
@@ -146,7 +154,7 @@ YeSPARQL offers various functions to transform these types to other serializatio
 
 ;; Only a Model can converted to RDF serializations.
 ;; You can use result->model to convert a ResultSet to a Model.
-;; CONSTRUCT returns a Model, and does not need to be converted
+;; CONSTRUCT and DESCRIBE return a Model, and do not need to be converted
 ;; ASK returns a boolean, as expected
 
 (def model (sparql/result->model result))
@@ -157,6 +165,17 @@ YeSPARQL offers various functions to transform these types to other serializatio
 (serialize-model model format)
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
+
+Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/).
+The result can be consumed iteratively (lazily, it implements [`Iterator`](https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html)), or as a whole with one of the various transformers like `result->clj`. Note that the latter requires more memory.
+
+The result will automatically close if all the `QuerySolution`s in the Iterator have been consumed (e.g. after `result->csv`).
+If a result has to be traversed multiple times use the `->result` function, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
+
+See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
+
+**WARNING**: while it is completely possible to not close the result, it will leak resources and is not advisable.
+
 
 Note that it is not a primary goal to provide a full native Clojure wrapper.
 It's perfectly to fine to keep using the Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
@@ -180,7 +199,9 @@ But, Clojure is a wonderful language, and if you are interested in learning we r
 - [The Joy of Clojure](http://www.amazon.com/Joy-Clojure-Michael-Fogus/dp/1617291412)
 
 ## Acknowledgments
-[Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
+- [Kris Jenkins](https://github.com/krisajenkins) for providing much of the idea and initial code
+- [Jozef Wagner](https://github.com/wagjo)
+- [Rick Moynihan](https://github.com/RickMoynihan)
 
 ## License
 

@@ -54,3 +54,7 @@ nbproject
 .nrepl-*
 .lein-repl-history
 .lein-failures
+
+pom.xml
+pom.xml.asc
+!gitkeep

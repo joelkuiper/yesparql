@@ -5,21 +5,17 @@
    [yesparql.util :refer [create-root-var]]
    [yesparql.sparql :as sparql]
    [yesparql.types :refer [map->Query]])
-  (:import [yesparql.types Query]))
+  (:import [yesparql.types Query]
+           [org.apache.jena.query ParameterizedSparqlString]))
 
 (defn statement-handler
-  "Parses the name of a query and returns the appropriate handler"
-  [name]
+  [^String name ^ParameterizedSparqlString query]
   (let [sparql-fn
         (cond
-          (re-matches #"select-.+" name) sparql/select
-          (or (re-matches #"\w+\?" name) (re-matches #"ask-.+" name)) sparql/ask
-          (or (re-matches #"\w+\!" name) (re-matches #"update-.+" name)) sparql/update
-          (re-matches #"describe-.+" name) sparql/describe
-          (re-matches #"construct-.+" name) sparql/construct
-          :else sparql/select)]
-    (fn [connection statement call-options]
-      (sparql-fn connection statement (:bindings call-options)))))
+          (= (last name) \!) sparql/update
+          :else sparql/query)]
+    (fn [connection query call-options]
+      (sparql-fn connection query call-options))))
 
 (defn- connection-error
   [name]
@@ -31,24 +27,25 @@
 
 (defn generate-query-fn
   "Generate a function to run a query
-   - If the name starts with `select-` a SPARQL query will be executed
-   - If the name starts with `describe-` a SPARQL describe will be executed
-   - If the name starts with `update-` or ends with `!` a SPARQL update will be executed
-   - If the name starts with `ask-` or ends with `?` a SPARQL ask will be executed
-   - If the name starts with `construct-` a SPARQL construct will be executed
-   - otherwise a SPARQL select will be executed"
+   - if the name ends with `!` a SPARQL UPDATE will be executed
+   - otherwise a SPARQL QUERY will be executed.
+
+   [FOR TESTING] you can override this behavior by passing a `:query-fn` at call or query time.
+   `query-fn` is a function with the signature `[data-set pq call-options & args]` and will be used instead."
   [{:keys [name docstring statement]
     :as query}
    query-options]
   (assert name      "Query name is mandatory.")
   (assert statement "Query statement is mandatory.")
-  (let [handler-fn (statement-handler name)
-        global-connection (:connection query-options)
+  (let [global-connection (:connection query-options)
+        query (sparql/parameterized-query statement)
+        default-handler (or (:query-fn query-options) (statement-handler name query))
         real-fn
         (fn [call-options]
-          (let [connection (or (:connection call-options) global-connection)]
+          (let [handler-fn (or (:query-fn call-options) default-handler)
+                connection (or (:connection call-options) global-connection)]
             (assert connection (connection-error name))
-            (handler-fn connection statement call-options)))
+            (handler-fn connection (.copy query false) call-options)))
         [display-args generated-fn]
         (let [global-args {:keys ['connection 'bindings]}]
           [(list [] [global-args])
