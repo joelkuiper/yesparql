@@ -113,39 +113,39 @@
     {:type (.getLiteralDatatypeURI literal)
      :value (f literal)}))
 
-(defmulti node->type (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
+(defmulti node->clj (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
 
-(defmethod node->type nil [^Node_Literal literal]
+(defmethod node->clj nil [^Node_Literal literal]
   (.getLiteralValue literal))
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#byte" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#byte" [^Node_Literal literal]
   (with-type #(byte (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#short" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#short" [^Node_Literal literal]
   (with-type #(short (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#decimal" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#decimal" [^Node_Literal literal]
   (with-type #(float (.getLiteralValue %)) literal)) ;; ???
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#double" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#double" [^Node_Literal literal]
   (with-type #(double (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#integer" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#integer" [^Node_Literal literal]
   (with-type #(int (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#int" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#int" [^Node_Literal literal]
   (with-type #(int (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/2001/XMLSchema#float" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/2001/XMLSchema#float" [^Node_Literal literal]
   (with-type #(float (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/TR/xmlschema11-2/#string" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/TR/xmlschema11-2/#string" [^Node_Literal literal]
   (with-type #(str (.getLiteralValue %)) literal))
 
-(defmethod node->type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [^Node_Literal literal]
+(defmethod node->clj "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString" [^Node_Literal literal]
   (with-type #(str (.getLiteralValue %)) literal))
 
-(defmethod node->type :default [^Node_Literal literal]
+(defmethod node->clj :default [^Node_Literal literal]
   (if-let [c (.getJavaClass (.getLiteralDatatype literal))]
     (with-type #(cast c (.getLiteralValue %)) literal)
     (with-type #(.getLiteralValue %) literal)))
@@ -157,7 +157,7 @@
   org.apache.jena.graph.Node_Blank
   (convert [this] (.getBlankNodeId this))
   org.apache.jena.graph.Node_Literal
-  (convert [this] (node->type this))
+  (convert [this] (node->clj this))
   org.apache.jena.graph.Node_NULL
   (convert [this] nil)
   org.apache.jena.graph.Node_URI
@@ -188,7 +188,7 @@
 (defrecord Quad [g s p o])
 (defrecord Triple [s p o])
 
-(defn statements->type
+(defn statements->clj
   [^Statement s]
   (let [^org.apache.jena.graph.Triple t (.asTriple s)]
     (->Triple (convert (.getSubject t)) (convert (.getPredicate t)) (convert (.getObject t)))))
@@ -202,7 +202,7 @@
   IQueryExecutionAccessible
   (->query-execution [_] qe)
   clojure.lang.Seqable
-  (seq [this] (map statements->type (iterator-seq (.listStatements m))))
+  (seq [this] (map statements->clj (iterator-seq (.listStatements m))))
   java.lang.AutoCloseable
   (close [this] (.close qe)))
 
@@ -237,13 +237,12 @@
 (defmethod query* "execDescribe" [^QueryExecution q-exec] (.execDescribe q-exec))
 (defmethod query* "execSelect" [^QueryExecution q-exec] (.execSelect q-exec))
 
-(defn ->execution
+(defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
   (let [^Query q (.asQuery pq)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
-
 
 (defn query
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
