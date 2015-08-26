@@ -161,7 +161,7 @@
   (let [^org.apache.jena.graph.Triple t (.asTriple s)]
     (->Triple (convert (.getSubject t)) (convert (.getPredicate t)) (convert (.getObject t)))))
 
-(deftype ClosableModel [^QueryExecution qe ^Model m]
+(deftype CloseableModel [^QueryExecution qe ^Model m]
   clojure.lang.Seqable
   (seq [this] (map statements->clj (iterator-seq (.listStatements m))))
   java.lang.AutoCloseable
@@ -214,7 +214,7 @@
       (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
       (or (= query-type "execDescribe") (= query-type "execConstruct"))
-      (->ClosableModel query-execution (query* query-execution))
+      (->CloseableModel query-execution (query* query-execution))
       :else
       (try (query* query-execution)
            (finally (.close query-execution))))))

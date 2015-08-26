@@ -78,3 +78,8 @@
 (defquery drugbank
   "yesparql/samples/drugbank.sparql"
   {:connection "http://drugbank.bio2rdf.org/sparql"})
+
+(defquery expression-atlas
+  "yesparql/samples/expression-atlas.sparql"
+  {:connection "https://www.ebi.ac.uk/rdf/services/atlas/sparql"
+   :timeout 1500})
