@@ -58,6 +58,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```clojure
 (require '[yesparql.core :refer [defquery]])
 
+
 ;; Import the SPARQL query as a function.
 ;; In this case we use DBPedia as a remote endpoint
 (defquery select-intellectuals "some/where/select-intellectuals.sparql"
@@ -83,21 +84,28 @@ These bindings get inserted into the query using a [Parameterized SPARQL String]
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
-(map println
+(require '[yesparql.sparql :refer :all])
+
+(def query-result
   (select-intellectuals
    {:bindings
     {"subject" (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}}))
 
-;=> {person http://dbpedia.org/resource/Bernard_Lyot}
-;=> {person http://dbpedia.org/resource/Henry_Drysdale_Dakin}
-;=> {person http://dbpedia.org/resource/Felix_Ehrenhaft}
-;=> {person http://dbpedia.org/resource/T._Wayland_Vaughan}
-;=> {person http://dbpedia.org/resource/Luigi_Puccianti}
-;=> {person http://dbpedia.org/resource/Max_Dehn}
-;=> {person http://dbpedia.org/resource/James_Irvine_(chemist)}
-;=> {person http://dbpedia.org/resource/Morris_E._Leeds}
-;=> {person http://dbpedia.org/resource/Walter_Tennyson_Swingle}
-;=> {person http://dbpedia.org/resource/Andrew_Lawson}
+(with-open [result query-result]
+  (print
+   (result->csv (->result result))))
+
+;=> person
+;=> http://dbpedia.org/resource/Bernard_Lyot
+;=> http://dbpedia.org/resource/Henry_Drysdale_Dakin
+;=> http://dbpedia.org/resource/Felix_Ehrenhaft
+;=> http://dbpedia.org/resource/T._Wayland_Vaughan
+;=> http://dbpedia.org/resource/Luigi_Puccianti
+;=> http://dbpedia.org/resource/Max_Dehn
+;=> http://dbpedia.org/resource/James_Irvine_(chemist)
+;=> http://dbpedia.org/resource/Morris_E._Leeds
+;=> http://dbpedia.org/resource/Walter_Tennyson_Swingle
+;=> http://dbpedia.org/resource/Andrew_Lawson
 ```
 
 ### One file, Many Queries
@@ -148,7 +156,6 @@ While it is completely possible to not close the result, it will leak resources 
 YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `yesparql.sparql` namespace.
 
 ```clojure
-
 (require '[yesparql.sparql :refer :all])
 
 (def result
@@ -176,6 +183,33 @@ If a `ResultSet` has to be traversed multiple times use the `copy-result-set`, w
 
 See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
 
+## A note on lazyness
+The results are returned in a lazy fashion, but the `ResultSet` will become invalid after closing the result. So this won't work
+
+```clojure
+(with-open [r (select-intellectuals)] (map println r))
+
+;=>ARQException ResultSet no longer valid (QueryExecution has been closed)  org.apache.jena.sparql.engine.ResultSetCheckCondition.check (ResultSetCheckCondition.java:106)
+```
+
+Instead do:
+
+```clojure
+(with-open [r (select-intellectuals)] (doall (map println r)))
+
+;=>{person http://dbpedia.org/resource/Antonio_Damasio}
+;=>{person http://dbpedia.org/resource/Albert_Victor_B%C3%A4cklund}
+;=>{person http://dbpedia.org/resource/Alexander_Oparin}
+;=>{person http://dbpedia.org/resource/Alexander_Stepanovich_Popov}
+;=>{person http://dbpedia.org/resource/Andrew_Ainslie_Common}
+;=>{person http://dbpedia.org/resource/Annie_Montague_Alexander}
+;=>{person http://dbpedia.org/resource/Anthony_James_Leggett}
+;=>{person http://dbpedia.org/resource/Ascanio_Sobrero}
+;=>{person http://dbpedia.org/resource/Axel_Thue}
+;=>{person http://dbpedia.org/resource/B%C3%A9la_Bollob%C3%A1s}
+```
+
+In general make sure you do any and all work you want to do on the results *eagerly* in the `with-open`.
 
 ## TODO
 - TDB Text API (with Lucene)
