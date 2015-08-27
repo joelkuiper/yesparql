@@ -12,7 +12,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.1.5"]
+[yesparql "0.2.0-beta"]
 ```
 
 ## What's the point?
