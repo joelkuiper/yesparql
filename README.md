@@ -131,18 +131,18 @@ Since SPARQL has multiple query types we consider the following syntax for the q
 - All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask), [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select), [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct), or [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
 
 ### Result format
-Each of the executed queries returns a lazy sequence of result bindings (SELECT), or triples (DESCRIBE, CONSTRUCT) in a native Clojure format. ASK returns a boolean.
+Each of the executed queries returns an `iterator-seq` of result binding maps (SELECT), or triples (DESCRIBE, CONSTRUCT) in a native Clojure data structure. ASK simply returns a boolean.
 
-Access to the underlying [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) and [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/QueryExecution.html) are provided by `->result`, `->query-execution` functions for SELECT queries.
+Access to the underlying Jena [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) and [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/QueryExecution.html) are provided by `->result`, `->query-execution` functions for SELECT queries.
 
-For DESCRIBE and CONSTRUCT access to the Jena Iterator of [`Triple`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Triple.html)s is provided by `->triples`, in addition to `->query-execution`. A convenience method `->model` can be used to transform the triples in to a Jena [`Model`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Model.html).
+For DESCRIBE and CONSTRUCT access to the Jena iterator of [`Triple`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Triple.html)s is provided by `->triples`, in addition to `->query-execution`. A convenience method `->model` can be used to transform the triples in to a Jena [`Model`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Model.html).
 For example: `(model->json-ld (->model (construct-query))`.
 
 Note that it's perfectly to fine to use these Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
 
-Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/).
-
-**WARNING**: while it is completely possible to not close the result, it will leak resources and is not advisable.
+ **WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/) or be closed manually.
+The underlying `ResultSet` (and result iterator) will become invalid after closing (see `copy-result-set`).
+While it is completely possible to not close the result, it will leak resources and is not advisable.
 
 ### Result serialization
 YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `yesparql.sparql` namespace.
@@ -160,21 +160,19 @@ YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `y
 (result->csv result)
 (result->xml result) ; NOT RDF, but the SPARQL RDF result format
 
-;; Only a Model can converted to RDF serializations.
-;; You can use result->model to convert a ResultSet to a Model.
-;; CONSTRUCT and DESCRIBE return a Model, and do not need to be converted
-;; ASK returns a boolean, as expected
+;; You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`.
+;; Or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
 
 (def model (result->model result))
 (model->json-ld model)
 (model->rdf+xml model)
 (model->ttl model)
 
-(serialize-model model format)
+(serialize-model model "format")
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
-If a `ResultSet` has to be traversed multiple times use the `copy-result-set` after the `->result` function, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
+If a `ResultSet` has to be traversed multiple times use the `copy-result-set`, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
 
 See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
 
