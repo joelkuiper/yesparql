@@ -179,7 +179,7 @@ See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentati
 
 ## TODO
 - TDB Text API (with Lucene)
-- Support for LIMIT arguments and other non-SPARQL valid bindings
+- Support for LIMIT arguments and other non-valid SPARQL bindings
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 - More tests
