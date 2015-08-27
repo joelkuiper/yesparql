@@ -8,19 +8,31 @@ PREFIX efo: <http://www.ebi.ac.uk/efo/>
 PREFIX atlas: <http://rdf.ebi.ac.uk/resource/atlas/>
 PREFIX atlasterms: <http://rdf.ebi.ac.uk/terms/atlas/>
 
-PREFIX upc:<http://purl.uniprot.org/core/>
-PREFIX identifiers:<http://identifiers.org/ensembl/>
+PREFIX biopax3:<http://www.biopax.org/release/biopax-level3.owl#>
 
-SELECT distinct ?valueLabel ?goid ?golabel
+SELECT distinct ?protein ?pathwayname ?expressionValue ?pvalue
 WHERE {
-?value rdfs:label ?valueLabel .
-?value atlasterms:isMeasurementOf ?probe  .
-?probe atlasterms:dbXref identifiers:ENSG00000129991  .
-?probe atlasterms:dbXref ?uniprot .
-SERVICE <http://sparql.uniprot.org/sparql> {
-  ?uniprot a upc:Protein  .
-  ?uniprot upc:classifiedWith ?keyword  .
-  ?keyword rdfs:seeAlso ?goid  .
-  ?goid rdfs:label ?golabel  .
-  }
-} LIMIT 100
+?protein rdf:type biopax3:Protein .
+?protein biopax3:memberPhysicalEntity
+  [biopax3:entityReference ?dbXref] .
+?pathway rdf:type biopax3:Pathway .
+?pathway biopax3:displayName ?pathwayname .
+?pathway biopax3:pathwayComponent ?reaction .
+?reaction rdf:type biopax3:BiochemicalReaction .
+ {
+  {?reaction ?rel ?protein .}
+  UNION
+    {
+     ?reaction  ?rel  ?complex .
+     ?complex rdf:type biopax3:Complex .
+     ?complex ?comp ?protein .
+    }
+ }
+?factor rdf:type efo:EFO_0000270 .
+?value atlasterms:hasFactorValue ?factor .
+?value atlasterms:isMeasurementOf ?probe .
+?value atlasterms:pValue ?pvalue .
+?value rdfs:label ?expressionValue .
+?probe atlasterms:dbXref ?dbXref .
+}
+ORDER BY ASC (?pvalue) LIMIT 25
