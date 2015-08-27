@@ -83,3 +83,21 @@
   "yesparql/samples/expression-atlas.sparql"
   {:connection "https://www.ebi.ac.uk/rdf/services/atlas/sparql"
    :timeout 1500})
+
+(defquery dbpedia-2
+  "yesparql/samples/dbpedia-2.sparql"
+  {:connection "http://dbpedia.org/sparql"
+   :timeout 1500})
+
+(expect
+ [{"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Ethiopia", :lang :en},
+   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 87952991}}
+  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Afghanistan", :lang :en},
+   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 31822848}}
+  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Uzbekistan", :lang :en},
+   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 30185000}}
+  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Burkina Faso", :lang :en},
+   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 17322796}}
+  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Malawi", :lang :en},
+   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 16407000}}]
+ (with-open [r (dbpedia-2)] (into [] r)))

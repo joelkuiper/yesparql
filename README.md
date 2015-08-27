@@ -30,7 +30,7 @@ Other perks include:
 
 
 ## Eeh, I meant what's the point of SPARQL?
-See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web)
+See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web) or see [SPARQL by Example](http://www.cambridgesemantics.com/semantic-university/sparql-by-example)
 
 ## Usage
 ### One File, One Query
