@@ -60,7 +60,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;; Import the SPARQL query as a function.
 ;; In this case we use DBPedia as a remote endpoint
-(defquery select-intellectuals "some/where/select-intellectuals.sql"
+(defquery select-intellectuals "some/where/select-intellectuals.sparql"
   {:connection "http://dbpedia.org/sparql"})
 
 ;; The function is now available in the namespace
