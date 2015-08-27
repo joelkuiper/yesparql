@@ -28,12 +28,28 @@
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
+  "Resets a `RewindableResulSet
+
+   See: https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html"
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
 
+(defn copy-result-set
+  "Returns a copy of a `ResultSet` allowing it to be re-used.
+
+  Make sure to apply this function if you intend to re-use the
+  `ResultSet` after initial traversal.
+
+  See also: `reset-if-rewindable!`"
+  [^ResultSet result]
+  (ResultSetFactory/copyResults result))
+
 ;; Serialize model
 (defn serialize-model
+  "Serializes a `Model` to a string
+
+   See: https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats"
   [^Model model ^String format]
   (with-open [w (java.io.StringWriter.)]
     (.write model w format)
@@ -42,10 +58,15 @@
 (defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
 (defn model->ttl [^Model model] (serialize-model model "TTL"))
 (defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
-(defn model->clj [^Model model] (json/decode (model->json-ld model) true))
+(defn model->clj
+  "Converts a `Model` to a native Clojure data structure via JSON-LD.
+   Note that this may not be preferable for large results due to memory constraints."
+  [^Model model]
+  (json/decode (model->json-ld model) true))
 
 ;; Serialize ResultSet
 (defmacro serialize-result
+  "Serializes a model to a string"
   [method result]
   `(let [output# (output-stream)]
      (try
@@ -63,24 +84,19 @@
 (defn result->tsv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
 (defn result->clj
+  "Converts a `ResultSet` to a native Clojure data type by using the
+   JSON SPARQL QUERY response as an intermediate representation."
   [^ResultSet result]
   (json/decode (result->json result) true))
 
 (defn result->model
+  "Converts `ResultSet` to a `Model`.
+   NOTE: CONSTRUCT and DESCRIBE queries are better suited for conversion to `Model`."
   [^ResultSet result]
   (let [^RDFOutput rdf (RDFOutput.)]
     (reset-if-rewindable! result)
     (.asModel rdf ^ResultSet result)))
 
-(defn copy-result-set
-  "Returns a copy of a `ResultSet` allowing it to be re-used.
-
-  Make sure to apply this function if you intend to re-use the
-  `ResultSet` after initial traversal.
-
-  See also: `reset-if-rewindable!`"
-  [^ResultSet result]
-  (ResultSetFactory/copyResults result))
 
 (defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
@@ -92,7 +108,7 @@
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
    or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
 
-   Any other type (e.g. strings, float) will be set as Literal.
+   Any other type (e.g. string, float) will be set as Literal.
    Does not warn if setting a binding that does not exist. "
   [^ParameterizedSparqlString pq bindings]
   (doall
@@ -164,8 +180,16 @@
   java.lang.AutoCloseable
   (close [_] (.close qe)))
 
-(defn ->query-execution [t] (.qe t))
-(defn ->result [^ResultSet r] (.rs r))
+(defn ->query-execution
+  "Return the underlying `QueryExecution` from the query results"
+  [t] (.qe t))
+
+(defn ->result
+  "Returns the underlying `ResultSet` from the query results
+
+  See also: `copy-result-set` for a re-usable ResultSet"
+  [^ResultSet r]
+  (.rs r))
 
 (defrecord Triple [s p o])
 
@@ -183,7 +207,12 @@
   java.lang.AutoCloseable
   (close [this] (.close qe)))
 
-(defn ->model [^CloseableModel closeable-model]
+(defn ->model
+  "Generate as `Model` from the stream of `Triple`.
+   The stream is consumed in the process, and cannot be traversed again.
+
+   NOTE: closes the underlying `QueryExecution`."
+  [^CloseableModel closeable-model]
   (with-open [model closeable-model]
     (let [^Model m
           (org.apache.jena.rdf.model.ModelFactory/createDefaultModel)
@@ -217,7 +246,7 @@
     (.isAskType q) "execAsk"
     (.isDescribeType q) "execDescribeTriples"))
 
-(defn query*
+(defn- query*
   [^QueryExecution q-exec]
   (clojure.lang.Reflector/invokeInstanceMethod
    q-exec
@@ -231,6 +260,22 @@
     query-execution))
 
 (defn query
+  "Executes a SPARQL SELECT, ASK, DESCRIBE or CONSTRUCT based on the
+  query type against the `connection`. `connection` can be a String
+  for a SPARQL endpoint URL or `Dataset`, `Model`, or `DatasetGraph`.
+
+   Returns a lazy-seq of results that can be traversed iteratively.
+  SELECT returns a seq of `ResultBinding`s in a native Clojure format.
+  DESCRIBE and CONSTRUCT return a seq of Triples (s, p, o) in a native
+  Clojure format. ASK returns a boolean.
+
+   See also: `->result` (SELECT), `->model` (DESCRIBE, CONSTRUCT) and
+  `->query-execution`. And the `result->csv`..., and `model->json-ld`
+  convenience methods for serialization.
+
+   WARNING: The underlying `QueryExecution` must be closed in order to
+  prevent resources from leaking. Call the query in a `with-open` or
+  close manually with (.close (->query-execution (query))). "
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
         query-type (query-type (.getQuery ^QueryExecution query-execution))]
@@ -255,7 +300,9 @@
   "Execute a SPARQL UPDATE `query` against the `connection`,
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
-  `connection` can be a String for a SPARQL endpoint URL or `Dataset`"
+  `connection` can be a String for a SPARQL endpoint URL or `Dataset`, or `DatasetGraph`.
+
+  Returns nil on success, or throws an Exception. "
   [connection ^ParameterizedSparqlString pq {:keys [bindings]}]
   (let [q (.toString (.asUpdate (query-with-bindings pq bindings)))
         ^UpdateRequest update-request (UpdateFactory/create q)
