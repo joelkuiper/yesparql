@@ -35,6 +35,11 @@
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
 
+(defn falsey-string
+  "bit of a JavaScript-ism to return nil on an empty string"
+  [str]
+  (if (empty? str) nil str))
+
 (defn copy-result-set
   "Returns a copy of a `ResultSet` allowing it to be re-used.
 
@@ -97,7 +102,7 @@
     (reset-if-rewindable! result)
     (.asModel rdf ^ResultSet result)))
 
-
+;; Query construction
 (defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
   (ParameterizedSparqlString. statement))
@@ -129,11 +134,7 @@
     bindings))
   pq)
 
-(defn falsey-string
-  "bit of a JavaScript-ism to return nil on an empty string"
-  [str]
-  (if (empty? str) nil str))
-
+;; Conversion to native Clojure format from Jena types
 (defn- with-type
   [f ^Node_Literal literal]
   (if-let [lang (falsey-string (.getLiteralLanguage literal))]
