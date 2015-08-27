@@ -133,10 +133,12 @@ Since SPARQL has multiple query types we consider the following syntax for the q
 ### Result format
 Each of the executed queries returns a lazy sequence of result bindings (SELECT), or triples (DESCRIBE, CONSTRUCT) in a native Clojure format. ASK returns a boolean.
 
-Access to the underlying [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) and [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/QueryExecution.html) are provided `->result`, `->query-execution` functions for SELECT queries.
+Access to the underlying [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) and [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/QueryExecution.html) are provided by `->result`, `->query-execution` functions for SELECT queries.
 
-For DESCRIBE and CONSTRUCT access to the Jena Iterator of [`Triple`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Triple.html)s is provided by `->triples`, in addition to `->query-execution`. A convenience method `->model` is provided to transform the results in to a Jena [`Model`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Model.html).
-It's perfectly to fine to use these Jena objects (e.g. `->result`), with the Clojure-Java [interop](http://clojure.org/java_interop).
+For DESCRIBE and CONSTRUCT access to the Jena Iterator of [`Triple`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Triple.html)s is provided by `->triples`, in addition to `->query-execution`. A convenience method `->model` can be used to transform the triples in to a Jena [`Model`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Model.html).
+For example: `(model->json-ld (->model (construct-query))`.
+
+Note that it's perfectly to fine to use these Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
 
 Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/).
 
@@ -171,7 +173,6 @@ YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `y
 (serialize-model model format)
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
-
 
 If a `ResultSet` has to be traversed multiple times use the `copy-result-set` after the `->result` function, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
 
