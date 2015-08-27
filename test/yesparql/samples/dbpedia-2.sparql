@@ -1,0 +1,12 @@
+PREFIX type: <http://dbpedia.org/class/yago/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX prop: <http://dbpedia.org/property/>
+
+SELECT ?country_name ?population
+WHERE {
+    ?country a type:LandlockedCountries ;
+             rdfs:label ?country_name ;
+             prop:populationEstimate ?population .
+    FILTER (?population > 15000000 &&
+            langMatches(lang(?country_name), "EN")) .
+} ORDER BY DESC(?population)
