@@ -1,0 +1,38 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX dcterms: <http://purl.org/dc/terms/>
+PREFIX obo: <http://purl.obolibrary.org/obo/>
+PREFIX sio: <http://semanticscience.org/resource/>
+PREFIX efo: <http://www.ebi.ac.uk/efo/>
+PREFIX atlas: <http://rdf.ebi.ac.uk/resource/atlas/>
+PREFIX atlasterms: <http://rdf.ebi.ac.uk/terms/atlas/>
+
+PREFIX biopax3:<http://www.biopax.org/release/biopax-level3.owl#>
+
+SELECT distinct ?protein ?pathwayname ?expressionValue ?pvalue
+WHERE {
+?protein rdf:type biopax3:Protein .
+?protein biopax3:memberPhysicalEntity
+  [biopax3:entityReference ?dbXref] .
+?pathway rdf:type biopax3:Pathway .
+?pathway biopax3:displayName ?pathwayname .
+?pathway biopax3:pathwayComponent ?reaction .
+?reaction rdf:type biopax3:BiochemicalReaction .
+ {
+  {?reaction ?rel ?protein .}
+  UNION
+    {
+     ?reaction  ?rel  ?complex .
+     ?complex rdf:type biopax3:Complex .
+     ?complex ?comp ?protein .
+    }
+ }
+?factor rdf:type efo:EFO_0000270 .
+?value atlasterms:hasFactorValue ?factor .
+?value atlasterms:isMeasurementOf ?probe .
+?value atlasterms:pValue ?pvalue .
+?value rdfs:label ?expressionValue .
+?probe atlasterms:dbXref ?dbXref .
+}
+ORDER BY ASC (?pvalue) LIMIT 25
