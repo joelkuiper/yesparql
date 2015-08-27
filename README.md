@@ -78,29 +78,26 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
   (do-something-with-result!))
 ```
 
-In addition, you can supply bindings as a map of strings (the names) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or literals (default).
+In addition, you can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or Literals (default).
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
 
 ```clojure
-
-(print
- (result->csv
+(map println
   (select-intellectuals
    {:bindings
-    {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+    {"subject" (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}}))
 
-;=> person
-;=> http://dbpedia.org/resource/Bernard_Lyot
-;=> http://dbpedia.org/resource/Henry_Drysdale_Dakin
-;=> http://dbpedia.org/resource/Felix_Ehrenhaft
-;=> http://dbpedia.org/resource/T._Wayland_Vaughan
-;=> http://dbpedia.org/resource/Luigi_Puccianti
-;=> http://dbpedia.org/resource/Max_Dehn
-;=> http://dbpedia.org/resource/James_Irvine_(chemist)
-;=> http://dbpedia.org/resource/Morris_E._Leeds
-;=> http://dbpedia.org/resource/Walter_Tennyson_Swingle
-;=> http://dbpedia.org/resource/Andrew_Lawson
+;=> {person http://dbpedia.org/resource/Bernard_Lyot}
+;=> {person http://dbpedia.org/resource/Henry_Drysdale_Dakin}
+;=> {person http://dbpedia.org/resource/Felix_Ehrenhaft}
+;=> {person http://dbpedia.org/resource/T._Wayland_Vaughan}
+;=> {person http://dbpedia.org/resource/Luigi_Puccianti}
+;=> {person http://dbpedia.org/resource/Max_Dehn}
+;=> {person http://dbpedia.org/resource/James_Irvine_(chemist)}
+;=> {person http://dbpedia.org/resource/Morris_E._Leeds}
+;=> {person http://dbpedia.org/resource/Walter_Tennyson_Swingle}
+;=> {person http://dbpedia.org/resource/Andrew_Lawson}
 ```
 
 ### One file, Many Queries
@@ -134,55 +131,57 @@ Since SPARQL has multiple query types we consider the following syntax for the q
 - All others will execute a [SPARQL QUERY](http://www.w3.org/TR/sparql11-query/) of types [ASK](http://www.w3.org/TR/rdf-sparql-query/#ask), [SELECT](http://www.w3.org/TR/rdf-sparql-query/#select), [CONSTRUCT](http://www.w3.org/TR/rdf-sparql-query/#construct), or [DESCRIBE](http://www.w3.org/TR/rdf-sparql-query/#describe) depending on the query.
 
 
-### Results processing
-Each of the executed queries returns its native [Apace Jena](https://jena.apache.org/) [ResultSet](https://jena.apache.org/documentation/javadoc/arq/) or [Model](https://jena.apache.org/documentation/javadoc/jena/) (depending on the type of query).
 
-YeSPARQL offers various functions to transform these types to other serializations in the `yesparql.sparql` namespace.
+### Result format
+Each of the executed queries returns a lazy sequence of results (SELECT) or triples (DESCRIBE, CONSTRUCT) in a native Clojure format. ASK returns a boolean.
+
+Access to the underlying [`ResultSet`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSet.html) and [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/QueryExecution.html) are provided `->result`, `->query-execution` functions for SELECT queries.
+
+For DESCRIBE and CONSTRUCT access to the Jena Iterator of [`Triple`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Triple.html)s is provided by `->triples`, in addition to `->query-execution`. A convenience method `->model` is provided to transform the results in to a Jena [`Model`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Model.html).
+
+### Result serialization
+YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `yesparql.sparql` namespace.
 
 ```clojure
 
-(require '[yesparql.sparql :as sparql])
+(require '[yesparql.sparql :refer :all])
 
 (def result
   (with-open [result (select-intellectuals)]
-    (->result result)
+    (copy-result-set (->result result))))
 
-(sparql/result->clj result) ; converts to a Clojure map using the JSON serialization
-(sparql/result->json result)
-(sparql/result->csv result)
-(sparql/result->xml result) ; NOT RDF, but the SPARQL RDF result format
+(result->clj result) ; converts to a Clojure map using the JSON serialization
+(result->json result)
+(result->csv result)
+(result->xml result) ; NOT RDF, but the SPARQL RDF result format
 
 ;; Only a Model can converted to RDF serializations.
 ;; You can use result->model to convert a ResultSet to a Model.
 ;; CONSTRUCT and DESCRIBE return a Model, and do not need to be converted
 ;; ASK returns a boolean, as expected
 
-(def model (sparql/result->model result))
-(sparql/model->json-ld model)
-(sparql/model->rdf+xml model)
-(sparql/model->ttl model)
+(def model (result->model result))
+(model->json-ld model)
+(model->rdf+xml model)
+(model->ttl model)
 
 (serialize-model model format)
 ```
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
 Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/).
-The result can be consumed iteratively (lazily, it implements [`Iterator`](https://docs.oracle.com/javase/8/docs/api/java/util/Iterator.html)), or as a whole with one of the various transformers like `result->clj`. Note that the latter requires more memory.
 
-The result will automatically close if all the `QuerySolution`s in the Iterator have been consumed (e.g. after `result->csv`).
-If a result has to be traversed multiple times use the `->result` function, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
+If a result has to be traversed multiple times use the `copy-result-set` after the `->result` function, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
 
 See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
 
 **WARNING**: while it is completely possible to not close the result, it will leak resources and is not advisable.
 
-
-Note that it is not a primary goal to provide a full native Clojure wrapper.
-It's perfectly to fine to keep using the Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
+It's perfectly to fine to keep using the Jena objects (e.g. `->result`), with the Clojure-Java [interop](http://clojure.org/java_interop).
 
 ## TODO
 - TDB Text API (with Lucene)
-- Better support for various binding types (prefixes, RDFNode, etc)
+- Support for LIMIT arguments and other non-SPARQL valid bindings
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 - More tests
@@ -208,3 +207,5 @@ But, Clojure is a wonderful language, and if you are interested in learning we r
 Copyright © 2015 Joel Kuiper
 
 Distributed under the Eclipse Public License, the same as Clojure.
+
+*Does it SPARQL? :sunny:*

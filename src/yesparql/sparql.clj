@@ -177,7 +177,7 @@
 
 (deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
   clojure.lang.Seqable
-  (seq [_] (map result-binding->clj (iterator-seq rs)))
+  (seq [_] (lazy-seq (map result-binding->clj (iterator-seq rs))))
   java.lang.AutoCloseable
   (close [_] (.close qe)))
 
@@ -204,7 +204,7 @@
 
 (deftype CloseableModel [^QueryExecution qe ^java.util.Iterator t]
   clojure.lang.Seqable
-  (seq [this] (map statement->clj (iterator-seq t)))
+  (seq [this] (lazy-seq (map statement->clj (iterator-seq t))))
   java.lang.AutoCloseable
   (close [this] (.close qe)))
 
@@ -223,6 +223,12 @@
       (.add m statements)
       m)))
 
+(defn ->triples
+  "Returns the unconverted Jena Iterator of `org.apache.jena.graph.Triple`"
+  [^CloseableModel m]
+  (.t m))
+
+;; Query
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
   (QueryExecutionFactory/sparqlService
@@ -289,6 +295,7 @@
       (try (query* query-execution)
            (finally (.close query-execution))))))
 
+;; Update
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
   (UpdateExecutionFactory/createRemote update ^String connection))
