@@ -3,6 +3,7 @@
   (:require [cheshire.core :as json])
   (:import
    [clojure.lang.Reflector]
+   [java.lang.IllegalArgumentException]
    [java.net URL URI]
    [org.apache.jena.graph Node]
    [org.apache.jena.update
@@ -30,7 +31,6 @@
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
-
 
 ;; Serialize model
 (defn serialize-model
@@ -89,28 +89,41 @@
 (defn ^ParameterizedSparqlString query-with-bindings
   "The `query` string will be formatted as a `ParameterizedSparqlString`
    and can be provided with a map of `bindings`.
-   Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
-   Any other type (e.g. strings, float) will be set as literal.
+   Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
+   or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
+
+   Any other type (e.g. strings, float) will be set as Literal.
    Does not warn if setting a binding that does not exist. "
   [^ParameterizedSparqlString pq bindings]
   (doall
    (map
-    (fn [[name resource]]
-      (condp instance? resource
-        URL (.setIri pq ^String name ^URL resource)
-        URI (.setIri pq ^String name ^String (str resource))
-        Node (.setParam pq ^String name ^Node resource)
-        RDFNode (.setParam pq ^String name ^RDFNode resource)
-        (.setLiteral pq name resource)))
+    (fn [[var resource]]
+      (let [subs (cond
+                   (string? var) var
+                   (integer? var) (int var)
+                   :else
+                   (throw java.lang.IllegalArgumentException
+                          "ParameterizedSparqlString binding keys must be strings or integers"))]
+        (condp instance? resource
+          URL (.setIri pq subs ^URL resource)
+          URI (.setIri pq subs ^String (str resource))
+          Node (.setParam pq subs ^Node resource)
+          RDFNode (.setParam pq subs ^RDFNode resource)
+          (.setLiteral pq subs resource))))
     bindings))
   pq)
 
+(defn falsey-string
+  "bit of a JavaScript-ism to return nil on an empty string"
+  [str]
+  (if (empty? str) nil str))
+
 (defn- with-type
   [f ^Node_Literal literal]
-  (if-let [lang (if (empty? (.getLiteralLanguage literal)) false (.getLiteralLanguage literal))]
+  (if-let [lang (falsey-string (.getLiteralLanguage literal))]
     {:type (.getLiteralDatatypeURI literal)
      :value (f literal)
-     :lang (str "@" lang)}
+     :lang (keyword lang)}
     {:type (.getLiteralDatatypeURI literal)
      :value (f literal)}))
 
@@ -154,21 +167,31 @@
 (defn ->query-execution [t] (.qe t))
 (defn ->result [^ResultSet r] (.rs r))
 
-(defrecord Quad [g s p o])
 (defrecord Triple [s p o])
 
-(defn statements->clj
-  [^Statement s]
-  (let [^org.apache.jena.graph.Triple t (.asTriple s)]
-    (apply ->Triple (map convert [(.getSubject t) (.getPredicate t) (.getObject t)]))))
+(defn triple->clj
+  [^org.apache.jena.graph.Triple t]
+  (apply ->Triple (map convert [(.getSubject t) (.getPredicate t) (.getObject t)])))
 
-(deftype CloseableModel [^QueryExecution qe ^Model m]
+(defn statement->clj
+  [^Statement s]
+  (triple->clj s))
+
+(deftype CloseableModel [^QueryExecution qe ^java.util.Iterator t]
   clojure.lang.Seqable
-  (seq [this] (map statements->clj (iterator-seq (.listStatements m))))
+  (seq [this] (map statement->clj (iterator-seq t)))
   java.lang.AutoCloseable
   (close [this] (.close qe)))
 
-(defn ->model [^CloseableResultSet m] (.m m))
+(defn ->model [^CloseableModel closeable-model]
+  (with-open [model closeable-model]
+    (let [^Model m
+          (org.apache.jena.rdf.model.ModelFactory/createDefaultModel)
+          ^java.util.List statements
+          (java.util.ArrayList.
+           (doall (map #(.asStatement m %) (iterator-seq (.t model)))))]
+      (.add m statements)
+      m)))
 
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
@@ -190,9 +213,9 @@
   [^Query q]
   (cond
     (.isSelectType q) "execSelect"
-    (.isConstructType q) "execConstruct"
+    (.isConstructType q) "execConstructTriples"
     (.isAskType q) "execAsk"
-    (.isDescribeType q) "execDescribe"))
+    (.isDescribeType q) "execDescribeTriples"))
 
 (defn query*
   [^QueryExecution q-exec]
@@ -214,7 +237,7 @@
     (cond
       (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
-      (or (= query-type "execDescribe") (= query-type "execConstruct"))
+      (or (= query-type "execDescribeTriples") (= query-type "execConstructTriples"))
       (->CloseableModel query-execution (query* query-execution))
       :else
       (try (query* query-execution)
