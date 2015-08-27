@@ -189,7 +189,10 @@ The results are returned in a lazy fashion, but the `ResultSet` will become inva
 ```clojure
 (with-open [r (select-intellectuals)] (map println r))
 
-;=>ARQException ResultSet no longer valid (QueryExecution has been closed)  org.apache.jena.sparql.engine.ResultSetCheckCondition.check (ResultSetCheckCondition.java:106)
+ARQException ResultSet no longer valid (QueryExecution has been
+closed) org.apache.jena.sparql.engine.ResultSetCheckCondition.check
+(ResultSetCheckCondition.java:106)
+
 ```
 
 Instead do:
