@@ -156,27 +156,37 @@ While it is completely possible to not close the result, it will leak resources 
 YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `yesparql.sparql` namespace.
 
 ```clojure
-(require '[yesparql.sparql :refer :all])
+user> (require '[yesparql.sparql :refer :all])
 
-(def result
-  (with-open [result (select-intellectuals)]
-    (copy-result-set (->result result))))
+user> (def result
+        (with-open [result (select-intellectuals)]
+        (copy-result-set (->result result))))
 
-(result->clj result) ; converts to a Clojure map using the JSON serialization
-(result->json result)
-(result->csv result)
-(result->xml result) ; NOT RDF, but the SPARQL RDF result format
+;; Converting results... 
 
-;; You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`.
-;; Or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
-
-(def model (result->model result))
-(model->json-ld model)
-(model->rdf+xml model)
-(model->ttl model)
-
-(serialize-model model "format")
+user> (result->clj result) ; converts to a Clojure map using the JSON serialization
+user> (result->json result)
+user> (result->csv result)
+user> (result->xml result) ; NOT RDF, but the SPARQL RDF result format
 ```
+You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`; or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
+
+```clojure
+
+;; Convert to model
+user> (def model (result->model result))
+
+;; Then choose one of the serializations...
+
+user> (model->json-ld model)
+user> (model->rdf+xml model)
+user> (model->ttl model)
+
+;; And serialize it...
+
+user> (serialize-model model "format")
+```
+
 See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
 
 If a `ResultSet` has to be traversed multiple times use the `copy-result-set`, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
@@ -198,7 +208,9 @@ closed) org.apache.jena.sparql.engine.ResultSetCheckCondition.check
 Instead do:
 
 ```clojure
-(with-open [r (select-intellectuals)] (doall (map println r)))
+(with-open [results (select-intellectuals)] 
+   (doseq [r results] 
+     (println r)))
 
 ;=>{person http://dbpedia.org/resource/Antonio_Damasio}
 ;=>{person http://dbpedia.org/resource/Albert_Victor_B%C3%A4cklund}
