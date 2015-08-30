@@ -162,7 +162,7 @@ user> (def result
         (with-open [result (select-intellectuals)]
         (copy-result-set (->result result))))
 
-;; Converting results... 
+;; Converting results...
 
 user> (result->clj result) ; converts to a Clojure map using the JSON serialization
 user> (result->json result)
@@ -182,12 +182,12 @@ user> (model->json-ld model)
 user> (model->rdf+xml model)
 user> (model->ttl model)
 
-;; And serialize it...
+;; Or use one of the other serialization formats
 
 user> (serialize-model model "format")
 ```
 
-See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for additional formats that can be passed to `serialize-model`.
+See [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats) for formats that can be passed to `serialize-model`.
 
 If a `ResultSet` has to be traversed multiple times use the `copy-result-set`, which generates a rewindable copy of the entire `ResultSet` (as in the example above).
 
@@ -208,8 +208,8 @@ closed) org.apache.jena.sparql.engine.ResultSetCheckCondition.check
 Instead do:
 
 ```clojure
-(with-open [results (select-intellectuals)] 
-   (doseq [r results] 
+(with-open [results (select-intellectuals)]
+   (doseq [r results]
      (println r)))
 
 ;=>{person http://dbpedia.org/resource/Antonio_Damasio}
