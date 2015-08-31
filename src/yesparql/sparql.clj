@@ -253,11 +253,12 @@
     (.isAskType q) "execAsk"
     (.isDescribeType q) "execDescribeTriples"))
 
-(defn- query*
-  [^QueryExecution q-exec]
-  (clojure.lang.Reflector/invokeInstanceMethod
-   q-exec
-   (query-type (.getQuery q-exec)) (object-array 0)))
+(defmulti query* (fn [^QueryExecution q-exec] (query-type (.getQuery q-exec))))
+(defmethod query* "execSelect" [^QueryExecution q-exec] (.execSelect q-exec))
+(defmethod query* "execAsk" [^QueryExecution q-exec] (.execAsk q-exec))
+(defmethod query* "execConstructTriples" [^QueryExecution q-exec] (.execConstructTriples q-exec))
+(defmethod query* "execDescribeTriples" [^QueryExecution q-exec] (.execDescribeTriples q-exec))
+
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
