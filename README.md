@@ -30,11 +30,11 @@ Other perks include:
 
 
 ## Eeh, I meant what's the point of SPARQL?
-See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web) or see [SPARQL by Example](http://www.cambridgesemantics.com/semantic-university/sparql-by-example)
+See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web) or see [SPARQL by Example](http://www.cambridgesemantics.com/semantic-university/sparql-by-example).
 
 ## Usage
 ### One File, One Query
-Create an SPARQL query.
+Create an SPARQL query and save it as a file.
 
 ```sparql
 -- Example dbpedia query, returning intellectuals restricted by subject
@@ -61,7 +61,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;; Import the SPARQL query as a function.
 ;; In this case we use DBPedia as a remote endpoint
-(defquery select-intellectuals "some/where/select-intellectuals.sparql"
+(defquery select-intellectuals "some/where/query.sparql"
   {:connection "http://dbpedia.org/sparql"})
 
 ;; The function is now available in the namespace
@@ -82,7 +82,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 You can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 
-In addition you can add `limit`, `offset`, `group-by` and `order-by` fields at query time.
+In addition you can overwrite `limit`, `offset`, fields at query time.
 
 A complete example of running a SPARQL SELECT against [DBPedia](http://wiki.dbpedia.org/), with initial bindings and limit:
 
@@ -198,13 +198,11 @@ You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`; or u
 user> (def model (result->model result))
 
 ;; Then choose one of the serializations...
-
 user> (model->json-ld model)
 user> (model->rdf+xml model)
 user> (model->ttl model)
 
 ;; Or use one of the other serialization formats
-
 user> (serialize-model model "format")
 ```
 

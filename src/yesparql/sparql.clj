@@ -28,7 +28,7 @@
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
-  "Resets a `RewindableResulSet
+  "Resets a `RewindableResulSet`
 
    See: https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html"
   [^ResultSet result]
@@ -183,7 +183,7 @@
 
 (defn ->query-execution
   "Return the underlying `QueryExecution` from the query results"
-  [t] (.qe t))
+  [r] (.qe r))
 
 (defn ->result
   "Returns the underlying `ResultSet` from the query results
@@ -274,11 +274,7 @@
       (.setOffset query (long offset)))
     (when-let [limit (:limit call-options)]
       (.setLimit query (long limit)))
-    (when-let [order-by (:order-by call-options)]
-      (.addOrderBy {:var order-by} (int {:direction order-by})))
-    (when-let [group-by (:group-by call-options)]
-      (.addGroupBy query group-by)))
-  query)
+    query))
 
 
 (defn query
