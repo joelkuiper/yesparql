@@ -75,6 +75,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ;=> Endpoint: http://dbpedia.org/sparql
 
 ;; Running the query is as easy as calling the function in a with-open
+;; The result is a lazy sequence of Clojure data structures
 (with-open [result (select-intellectuals)]
   (do-something-with-result! result))
 ```
@@ -129,7 +130,7 @@ user> (with-open [result (select-intellectuals)]
 ;=> http://dbpedia.org/resource/B%C3%A9la_Bollob%C3%A1s
 ```
 
-**WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/) or be closed manually.
+**WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/), or be closed manually.
 The underlying `ResultSet` (and result iterator) will become invalid after closing (see `copy-result-set`).
 While it is completely possible to not close the result, it will leak resources and is not advisable.
 

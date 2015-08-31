@@ -182,7 +182,7 @@
   (close [_] (.close qe)))
 
 (defn ->query-execution
-  "Return the underlying `QueryExecution` from the query results"
+  "Returns the underlying `QueryExecution` from the query results"
   [r] (.qe r))
 
 (defn ->result
@@ -258,7 +258,6 @@
 (defmethod query* "execAsk" [^QueryExecution q-exec] (.execAsk q-exec))
 (defmethod query* "execConstructTriples" [^QueryExecution q-exec] (.execConstructTriples q-exec))
 (defmethod query* "execDescribeTriples" [^QueryExecution q-exec] (.execDescribeTriples q-exec))
-
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
