@@ -93,7 +93,8 @@ user> (with-open
         [result (select-intellectuals
                  {:limit 10
                   :bindings
-                  {"subject" (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}})]
+                  {"subject"
+                  (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}})]
         (into [] result))
 
 ;=> [{"person" "http://dbpedia.org/resource/Antonio_Damasio"}
