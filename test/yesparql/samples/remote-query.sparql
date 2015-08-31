@@ -4,12 +4,11 @@
 PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
 PREFIX dct: <http://purl.org/dc/terms/>
 
-SELECT DISTINCT ?person ?birthDate {
+SELECT DISTINCT ?person {
     { ?person a dbpedia-owl:Scientist }
     UNION
     { ?person a dbpedia-owl:Writer }
     UNION
     { ?person a dbpedia-owl:Philosopher }
     ?person dct:subject ?subject .
-    ?person dbpedia-owl:birthDate ?birthDate
 } LIMIT 10

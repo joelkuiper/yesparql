@@ -253,11 +253,12 @@
     (.isAskType q) "execAsk"
     (.isDescribeType q) "execDescribeTriples"))
 
-(defn- query*
-  [^QueryExecution q-exec]
-  (clojure.lang.Reflector/invokeInstanceMethod
-   q-exec
-   (query-type (.getQuery q-exec)) (object-array 0)))
+(defmulti query* (fn [^QueryExecution q-exec] (query-type (.getQuery q-exec))))
+(defmethod query* "execSelect" [^QueryExecution q-exec] (.execSelect q-exec))
+(defmethod query* "execAsk" [^QueryExecution q-exec] (.execAsk q-exec))
+(defmethod query* "execConstructTriples" [^QueryExecution q-exec] (.execConstructTriples q-exec))
+(defmethod query* "execDescribeTriples" [^QueryExecution q-exec] (.execDescribeTriples q-exec))
+
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
@@ -265,6 +266,20 @@
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
+
+(defn- set-additional-fields
+  [^Query query call-options]
+  (do
+    (when-let [offset (:offset call-options)]
+      (.setOffset query (long offset)))
+    (when-let [limit (:limit call-options)]
+      (.setLimit query (long limit)))
+    (when-let [order-by (:order-by call-options)]
+      (.addOrderBy {:var order-by} (int {:direction order-by})))
+    (when-let [group-by (:group-by call-options)]
+      (.addGroupBy query group-by)))
+  query)
+
 
 (defn query
   "Executes a SPARQL SELECT, ASK, DESCRIBE or CONSTRUCT based on the
@@ -285,7 +300,9 @@
   close manually with (.close (->query-execution (query))). "
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
-        query-type (query-type (.getQuery ^QueryExecution query-execution))]
+        query (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
+        query-type (query-type query)]
+    (when-let [limit ()])
     (cond
       (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
