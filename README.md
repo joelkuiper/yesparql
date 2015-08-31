@@ -192,7 +192,6 @@ user> (result->xml result) ; NOT RDF, but the SPARQL RDF result format
 You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`; or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
 
 ```clojure
-
 ;; Convert to model
 user> (def model (result->model result))
 
@@ -212,7 +211,7 @@ If a `ResultSet` has to be traversed multiple times use the `copy-result-set`, w
 See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
 
 ## A note on lazyness
-The results are returned in a lazy fashion, but the `ResultSet` will become invalid after closing the result. So this won't work
+The results are returned in a lazy fashion, but the underlying `ResultSet` will become invalid after closing the result. So this won't work:
 
 ```clojure
 (with-open [r (select-intellectuals)] (map println r))
@@ -220,7 +219,6 @@ The results are returned in a lazy fashion, but the `ResultSet` will become inva
 ARQException ResultSet no longer valid (QueryExecution has been
 closed) org.apache.jena.sparql.engine.ResultSetCheckCondition.check
 (ResultSetCheckCondition.java:106)
-
 ```
 
 Instead do:
