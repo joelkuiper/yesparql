@@ -76,37 +76,60 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;; Running the query is as easy as calling the function in a with-open
 (with-open [result (select-intellectuals)]
-  (do-something-with-result!))
+  (do-something-with-result! result))
 ```
 
-In addition, you can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or Literals (default).
+You can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
-A complete example of running a SPARQL SELECT against DBPedia, with initial bindings:
+
+In addition you can add `limit`, `offset`, `group-by` and `order-by` fields at query time.
+
+A complete example of running a SPARQL SELECT against [DBPedia](http://wiki.dbpedia.org/), with initial bindings and limit:
 
 ```clojure
-(require '[yesparql.sparql :refer :all])
+user> (require '[yesparql.sparql :refer :all])
 
-(def query-result
-  (select-intellectuals
-   {:bindings
-    {"subject" (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}}))
+user> (with-open
+        [result (select-intellectuals
+                 {:limit 10
+                  :bindings
+                  {"subject" (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}})]
+        (into [] result))
 
-(with-open [result query-result]
-  (print
-   (result->csv (->result result))))
+;=> [{"person" "http://dbpedia.org/resource/Antonio_Damasio"}
+;=>  {"person" "http://dbpedia.org/resource/Albert_Victor_B%C3%A4cklund"}
+;=>  {"person" "http://dbpedia.org/resource/Alexander_Oparin"}
+;=>  {"person" "http://dbpedia.org/resource/Alexander_Stepanovich_Popov"}
+;=>  {"person" "http://dbpedia.org/resource/Andrew_Ainslie_Common"}
+;=>  {"person" "http://dbpedia.org/resource/Annie_Montague_Alexander"}
+;=>  {"person" "http://dbpedia.org/resource/Anthony_James_Leggett"}
+;=>  {"person" "http://dbpedia.org/resource/Ascanio_Sobrero"}
+;=>  {"person" "http://dbpedia.org/resource/Axel_Thue"}
+;=>  {"person" "http://dbpedia.org/resource/B%C3%A9la_Bollob%C3%A1s"}]
+```
+
+You can also transform the result directly into other formats like CSV:
+
+```clojure
+user> (with-open [result (select-intellectuals)]
+        (result->csv (->result result)))
 
 ;=> person
-;=> http://dbpedia.org/resource/Bernard_Lyot
-;=> http://dbpedia.org/resource/Henry_Drysdale_Dakin
-;=> http://dbpedia.org/resource/Felix_Ehrenhaft
-;=> http://dbpedia.org/resource/T._Wayland_Vaughan
-;=> http://dbpedia.org/resource/Luigi_Puccianti
-;=> http://dbpedia.org/resource/Max_Dehn
-;=> http://dbpedia.org/resource/James_Irvine_(chemist)
-;=> http://dbpedia.org/resource/Morris_E._Leeds
-;=> http://dbpedia.org/resource/Walter_Tennyson_Swingle
-;=> http://dbpedia.org/resource/Andrew_Lawson
+;=> http://dbpedia.org/resource/Antonio_Damasio
+;=> http://dbpedia.org/resource/Albert_Victor_B%C3%A4cklund
+;=> http://dbpedia.org/resource/Alexander_Oparin
+;=> http://dbpedia.org/resource/Alexander_Stepanovich_Popov
+;=> http://dbpedia.org/resource/Andrew_Ainslie_Common
+;=> http://dbpedia.org/resource/Annie_Montague_Alexander
+;=> http://dbpedia.org/resource/Anthony_James_Leggett
+;=> http://dbpedia.org/resource/Ascanio_Sobrero
+;=> http://dbpedia.org/resource/Axel_Thue
+;=> http://dbpedia.org/resource/B%C3%A9la_Bollob%C3%A1s
 ```
+
+**WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/) or be closed manually.
+The underlying `ResultSet` (and result iterator) will become invalid after closing (see `copy-result-set`).
+While it is completely possible to not close the result, it will leak resources and is not advisable.
 
 ### One file, Many Queries
 [Same as Yesql](https://github.com/krisajenkins/yesql#one-file-many-queries)
@@ -147,10 +170,6 @@ For DESCRIBE and CONSTRUCT access to the Jena iterator of [`Triple`](https://jen
 For example: `(model->json-ld (->model (construct-query))`.
 
 Note that it's perfectly to fine to use these Jena objects, with the Clojure-Java [interop](http://clojure.org/java_interop).
-
- **WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/) or be closed manually.
-The underlying `ResultSet` (and result iterator) will become invalid after closing (see `copy-result-set`).
-While it is completely possible to not close the result, it will leak resources and is not advisable.
 
 ### Result serialization
 YeSPARQL offers various functions to serialize `Model` and `ResultSet` in the `yesparql.sparql` namespace.
@@ -228,7 +247,6 @@ In general make sure you do any and all work you want to do on the results *eage
 
 ## TODO
 - TDB Text API (with Lucene)
-- Support for LIMIT arguments and other non-valid SPARQL bindings
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 - More tests
