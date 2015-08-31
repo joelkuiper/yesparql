@@ -267,6 +267,20 @@
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
 
+(defn- set-additional-fields
+  [^Query query call-options]
+  (do
+    (when-let [offset (:offset call-options)]
+      (.setOffset query (long offset)))
+    (when-let [limit (:limit call-options)]
+      (.setLimit query (long limit)))
+    (when-let [order-by (:order-by call-options)]
+      (.addOrderBy {:var order-by} (int {:direction order-by})))
+    (when-let [group-by (:group-by call-options)]
+      (.addGroupBy query group-by)))
+  query)
+
+
 (defn query
   "Executes a SPARQL SELECT, ASK, DESCRIBE or CONSTRUCT based on the
   query type against the `connection`. `connection` can be a String
@@ -286,7 +300,9 @@
   close manually with (.close (->query-execution (query))). "
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
-        query-type (query-type (.getQuery ^QueryExecution query-execution))]
+        query (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
+        query-type (query-type query)]
+    (when-let [limit ()])
     (cond
       (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))

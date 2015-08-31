@@ -101,3 +101,26 @@
   {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Malawi", :lang :en},
    "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 16407000}}]
  (with-open [r (dbpedia-2)] (into [] r)))
+
+;; Test limit
+(expect 4 (count (into [] (select-all))))
+(expect 3 (count (into [] (select-all {:limit 3}))))
+
+;; Test offset
+(expect
+ [{"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A second book"},
+   "subject" "http://example/book2",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}
+  {"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A third book"},
+   "subject" "http://example/book3",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}]
+ (into [] (select-all {:limit 2 :offset 2})))
+
+(expect
+ [{"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A new book"},
+   "subject" "http://example/book1",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}
+  {"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A second book"},
+   "subject" "http://example/book2",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}]
+ (into [] (select-all {:limit 2 :offset 1})))
