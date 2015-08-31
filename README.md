@@ -184,7 +184,6 @@ user> (def result
         (copy-result-set (->result result))))
 
 ;; Converting results...
-
 user> (result->clj result) ; converts to a Clojure map using the JSON serialization
 user> (result->json result)
 user> (result->csv result)
