@@ -123,8 +123,8 @@
                    (string? var) var
                    (integer? var) (int var)
                    :else
-                   (throw java.lang.IllegalArgumentException
-                          "ParameterizedSparqlString binding keys must be strings or integers"))]
+                   (throw (java.lang.IllegalArgumentException.
+                          "ParameterizedSparqlString binding keys must be strings or integers")))]
         (condp instance? resource
           URL (.setIri pq subs ^URL resource)
           URI (.setIri pq subs ^String (str resource))
