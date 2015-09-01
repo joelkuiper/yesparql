@@ -185,7 +185,6 @@ user> (def result
         (copy-result-set (->result result))))
 
 ;; Converting results...
-user> (result->clj result) ; converts to a Clojure map using the JSON serialization
 user> (result->json result)
 user> (result->csv result)
 user> (result->xml result) ; NOT RDF, but the SPARQL RDF result format

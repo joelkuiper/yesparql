@@ -16,9 +16,6 @@
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [instaparse "1.3.6"]
 
-                 ;; JSON
-                 [cheshire "5.3.1"]
-
                  [org.apache.jena/jena-arq "3.0.0"]
                  [org.apache.jena/jena-text "3.0.0"]
                  [org.apache.jena/jena-core "3.0.0"]

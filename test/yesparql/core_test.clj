@@ -11,7 +11,7 @@
 
 (defn triple-count
   [results]
-  (count (get-in (result->clj (->result results)) [:results :bindings])))
+  (count (into [] results)))
 
 (def tdb (tdb/create-in-memory))
 
@@ -48,11 +48,6 @@
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"
   {:connection tdb})
-
-(expect {:type "literal", :value "A default book"}
-        (:title (first (get-in
-                        (result->clj (->result (select-book {:bindings {"book" (URI. "http://example/book0")}})))
-                        [:results :bindings]))))
 
 ;; Test with function override
 (expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"

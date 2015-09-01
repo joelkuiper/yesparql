@@ -1,6 +1,5 @@
 (ns yesparql.sparql
   (:refer-clojure :exclude [update])
-  (:require [cheshire.core :as json])
   (:import
    [clojure.lang.Reflector]
    [java.lang.IllegalArgumentException]
@@ -63,11 +62,6 @@
 (defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
 (defn model->ttl [^Model model] (serialize-model model "TTL"))
 (defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
-(defn model->clj
-  "Converts a `Model` to a native Clojure data structure via JSON-LD.
-   Note that this may not be preferable for large results due to memory constraints."
-  [^Model model]
-  (json/decode (model->json-ld model) true))
 
 ;; Serialize ResultSet
 (defmacro serialize-result
@@ -87,12 +81,6 @@
 (defn result->xml [^ResultSet result] (serialize-result ResultSetFormatter/outputAsXML result))
 (defn result->csv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsCSV result))
 (defn result->tsv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
-
-(defn result->clj
-  "Converts a `ResultSet` to a native Clojure data type by using the
-   JSON SPARQL QUERY response as an intermediate representation."
-  [^ResultSet result]
-  (json/decode (result->json result) true))
 
 (defn result->model
   "Converts `ResultSet` to a `Model`.
