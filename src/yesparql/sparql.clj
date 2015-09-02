@@ -113,7 +113,7 @@
    or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
 
    Any other type (e.g. string, float) will be set as Literal.
-   In addition you can supply a map of {:type (optional, uri), :lang (optional, str or keyword), :value}.
+   Alternatively, you can supply a map of {:type (optional, uri), :lang (optional, str or keyword), :value}.
 
    Does not warn if setting a binding that does not exist. "
   [^ParameterizedSparqlString pq bindings]

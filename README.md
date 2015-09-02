@@ -81,6 +81,8 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ```
 
 You can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
+Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}` which will be coerced to the appropriate `Literal` automatically.
+
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 
 In addition you can overwrite `limit`, `offset`, fields at query time.
