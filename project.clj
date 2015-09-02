@@ -5,9 +5,10 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :scm {:name "git"
         :url "https://github.com/joelkuiper/yesparql"}
-  :profiles {:dev {:dependencies [[expectations "2.1.3"]
-                                  [org.apache.derby/derby "10.11.1.1"]]
-                   :plugins [[lein-autoexpect "1.4.0"]
+  :profiles {:dev {:dependencies
+                   [[expectations "2.1.3"]]
+                   :plugins [[michaelblume/lein-marginalia "0.9.0"]
+                             [lein-autoexpect "1.4.0"]
                              [lein-expectations "0.0.8"]]}
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}

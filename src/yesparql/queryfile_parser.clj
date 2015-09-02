@@ -31,8 +31,9 @@
   "Parses a string with Yesparql's defqueries syntax into a sequence of maps."
   [text]
   (process-instaparse-result
-   (instaparse/transform parser-transforms
-                         (instaparse/parses parser
-                                            (str text "\n") ;;; TODO This is a workaround for files with no end-of-line marker.
-                                            :start :queries))
+   (instaparse/transform
+    parser-transforms
+    (instaparse/parses parser
+                       (str text "\n") ;;; TODO This is a workaround for files with no end-of-line marker.
+                       :start :queries))
    {}))

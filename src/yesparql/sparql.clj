@@ -21,20 +21,19 @@
     ParameterizedSparqlString
     ResultSetFactory ResultSet ResultSetFormatter]))
 
-;; Util
 (defn ^java.io.OutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
   "Resets a `RewindableResulSet`
 
-   See: https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html"
+   See: [ResultSetRewindable](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html)."
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
 
 (defn falsey-string
-  "bit of a JavaScript-ism to return nil on an empty string"
+  "bit of a JavaScript-ism to return nil on an empty string."
   [str]
   (if (empty? str) nil str))
 
@@ -48,11 +47,10 @@
   [^ResultSet result]
   (ResultSetFactory/copyResults result))
 
-;; Serialize model
 (defn serialize-model
   "Serializes a `Model` to a string
 
-   See: https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats"
+   See: [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats)."
   [^Model model ^String format]
   (with-open [w (java.io.StringWriter.)]
     (.write model w format)
@@ -62,9 +60,8 @@
 (defn model->ttl [^Model model] (serialize-model model "TTL"))
 (defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
 
-;; Serialize ResultSet
 (defmacro serialize-result
-  "Serializes a model to a string"
+  "Serializes a `Result` to a string"
   [method result]
   `(let [output# (output-stream)]
      (try
@@ -83,13 +80,12 @@
 
 (defn result->model
   "Converts `ResultSet` to a `Model`.
+
    NOTE: CONSTRUCT and DESCRIBE queries are better suited for conversion to `Model`."
   [^ResultSet result]
   (let [^RDFOutput rdf (RDFOutput.)]
     (reset-if-rewindable! result)
     (.asModel rdf ^ResultSet result)))
-
-;; Query construction
 
 (def ^Model default-model (org.apache.jena.rdf.model.ModelFactory/createDefaultModel))
 
@@ -111,9 +107,10 @@
    and can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
    or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
-
    Any other type (e.g. string, float) will be set as Literal.
-   Alternatively, you can supply a map of {:type (optional, uri), :lang (optional, str or keyword), :value}.
+
+   Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}`
+   which will be coerced to the appropriate `Literal` automatically.
 
    Does not warn if setting a binding that does not exist. "
   [^ParameterizedSparqlString pq bindings]
@@ -138,7 +135,6 @@
     bindings))
   pq)
 
-;; Conversion to native Clojure format from Jena types
 (defn- with-type
   [f ^Node_Literal literal]
   (if-let [lang (falsey-string (.getLiteralLanguage literal))]
@@ -236,7 +232,6 @@
   [^CloseableModel m]
   (.t m))
 
-;; Query
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
   (QueryExecutionFactory/sparqlService
@@ -300,7 +295,7 @@
 
    WARNING: The underlying `QueryExecution` must be closed in order to
   prevent resources from leaking. Call the query in a `with-open` or
-  close manually with (.close (->query-execution (query))). "
+  close manually with `(.close (->query-execution (query)))`. "
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
         query (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
@@ -315,7 +310,6 @@
       (try (query* query-execution)
            (finally (.close query-execution))))))
 
-;; Update
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
   (UpdateExecutionFactory/createRemote update ^String connection))

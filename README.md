@@ -184,7 +184,7 @@ user> (require '[yesparql.sparql :refer :all])
 
 user> (def result
         (with-open [result (select-intellectuals)]
-        (copy-result-set (->result result))))
+          (copy-result-set (->result result))))
 
 ;; Converting results...
 user> (result->json result)
