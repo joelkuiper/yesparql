@@ -1,7 +1,6 @@
 (ns yesparql.sparql
   (:refer-clojure :exclude [update])
   (:import
-   [clojure.lang.Reflector]
    [java.lang.IllegalArgumentException]
    [java.net URL URI]
    [org.apache.jena.graph Node]
@@ -91,6 +90,18 @@
     (.asModel rdf ^ResultSet result)))
 
 ;; Query construction
+
+(def ^Model default-model (org.apache.jena.rdf.model.ModelFactory/createDefaultModel))
+
+(defn keyword-str [kw] (if (keyword? kw) (name kw) kw))
+
+(defn ^Literal clj->literal
+  [{:keys [value type lang]}]
+  (cond
+    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. type))
+    lang (.createLiteral default-model (str value) (keyword-str lang))
+    :else (.createTypedLiteral default-model value)))
+
 (defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
   (ParameterizedSparqlString. statement))
@@ -102,6 +113,8 @@
    or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
 
    Any other type (e.g. string, float) will be set as Literal.
+   In addition you can supply a map of {:type (optional), :lang (optional), :value}.
+
    Does not warn if setting a binding that does not exist. "
   [^ParameterizedSparqlString pq bindings]
   (doall
@@ -112,13 +125,16 @@
                    (integer? var) (int var)
                    :else
                    (throw (java.lang.IllegalArgumentException.
-                          "ParameterizedSparqlString binding keys must be strings or integers")))]
-        (condp instance? resource
-          URL (.setIri pq subs ^URL resource)
-          URI (.setIri pq subs ^String (str resource))
-          Node (.setParam pq subs ^Node resource)
-          RDFNode (.setParam pq subs ^RDFNode resource)
-          (.setLiteral pq subs resource))))
+                           "ParameterizedSparqlString binding keys must be strings or integers")))]
+        (if (map? resource)
+          (.setLiteral pq subs (clj->literal resource))
+
+          (condp instance? resource
+            URL (.setIri pq subs ^URL resource)
+            URI (.setIri pq subs ^String (str resource))
+            Node (.setParam pq subs ^Node resource)
+            RDFNode (.setParam pq subs ^RDFNode resource)
+            (.setLiteral pq subs resource)))))
     bindings))
   pq)
 
