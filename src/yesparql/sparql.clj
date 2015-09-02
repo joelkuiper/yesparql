@@ -165,7 +165,9 @@
 
 (deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
   clojure.lang.Seqable
-  (seq [_] (map result-binding->clj (iterator-seq rs)))
+  (seq [_]
+    (when-let [iseq (seq (iterator-seq rs))]
+      (map result-binding->clj iseq)))
   java.lang.AutoCloseable
   (close [_] (.close qe)))
 
@@ -192,7 +194,9 @@
 
 (deftype CloseableModel [^QueryExecution qe ^java.util.Iterator t]
   clojure.lang.Seqable
-  (seq [this] (map statement->clj (iterator-seq t)))
+  (seq [this]
+    (when-let [iseq (seq (iterator-seq t))]
+      (map statement->clj iseq)))
   java.lang.AutoCloseable
   (close [this] (.close qe)))
 
