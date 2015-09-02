@@ -103,16 +103,15 @@
   (ParameterizedSparqlString. statement))
 
 (defn ^ParameterizedSparqlString query-with-bindings
-  "The `query` string will be formatted as a `ParameterizedSparqlString`
-   and can be provided with a map of `bindings`.
+  "The `query` can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
-   or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
-   Any other type (e.g. string, float) will be set as Literal.
+   or a int->URL, int->URI, int->Node or int->RDFNode, for positional parameters.
+   Any other type (e.g. String, Float) will be set as Literal.
 
    Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}`
    which will be coerced to the appropriate `Literal` automatically.
 
-   Does not warn if setting a binding that does not exist. "
+   Does not warn when setting a binding that does not exist."
   [^ParameterizedSparqlString pq bindings]
   (doall
    (map
@@ -290,8 +289,8 @@
   Clojure format. ASK returns a boolean.
 
    See also: `->result` (SELECT), `->model` (DESCRIBE, CONSTRUCT) and
-  `->query-execution`. And the `result->csv`..., and `model->json-ld`
-  convenience methods for serialization.
+  `->query-execution`. Or use the `result->csv`..., and `model->json-ld`
+  convenience methods for serialization to strings.
 
    WARNING: The underlying `QueryExecution` must be closed in order to
   prevent resources from leaking. Call the query in a `with-open` or
