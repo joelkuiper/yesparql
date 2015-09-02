@@ -3,7 +3,7 @@
             [yesparql.generate :refer [generate-var]]
             [yesparql.queryfile-parser :refer [parse-tagged-queries]]))
 
-;; From https://github.com/krisajenkins/yesql/blob/devel/src/yesql/core.clj
+;; Most of the non-SPARQL code is directly from [Yesql](https://github.com/krisajenkins/yesql/blob/devel/src/yesql/core.clj) by Kris Jenkins
 
 (defn defqueries
   "Defines several query functions, as defined in the given SPARQL file.
