@@ -246,8 +246,6 @@ In general make sure you do any and all work you want to do on the results *eage
 - TDB Text API (with Lucene)
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
-- More tests
-- Better docstrings
 
 ## New to Clojure?
 If you are new to Clojure the code might look unfamiliar.
