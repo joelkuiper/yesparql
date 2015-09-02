@@ -5,6 +5,8 @@
 
 YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query/) queries against endpoints or [TDB stores](https://jena.apache.org/documentation/tdb/index.html), heavily influenced by [Yesql](https://github.com/krisajenkins/yesql).
 
+[Annotated Source](https://joelkuiper.github.io/yesparql/uberdoc.html)
+
 
 ## Installation
 [![Clojars Project](http://clojars.org/yesparql/latest-version.svg)](http://clojars.org/yesparql)
