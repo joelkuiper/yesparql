@@ -57,6 +57,7 @@
     (with-meta generated-fn
       (merge {:name name
               :arglists display-args
+              :tag 'java.lang.AutoCloseable
               ::source (str statement)}
              (when docstring
                {:doc docstring})))))
