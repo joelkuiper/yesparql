@@ -33,7 +33,7 @@
     (.reset result)))
 
 (defn falsey-string
-  "bit of a JavaScript-ism to return nil on an empty string."
+  "JavaScript-ism to return nil on an empty string."
   [str]
   (if (empty? str) nil str))
 
@@ -94,7 +94,7 @@
 (defn ^Literal clj->literal
   [{:keys [value type lang]}]
   (cond
-    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. type))
+    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. (str type)))
     lang (.createLiteral default-model (str value) (keyword-str lang))
     :else (.createTypedLiteral default-model value)))
 
@@ -108,7 +108,8 @@
    or a int->URL, int->URI, int->Node or int->RDFNode, for positional parameters.
    Any other type (e.g. String, Float) will be set as Literal.
 
-   Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}`
+   Alternatively, you can supply a map of
+   `{:type (optional, uri or string), :lang (optional, str or keyword), :value}`
    which will be coerced to the appropriate `Literal` automatically.
 
    Does not warn when setting a binding that does not exist."
