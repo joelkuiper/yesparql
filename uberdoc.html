@@ -2865,7 +2865,7 @@ net.brehaut.ClojureTools = (function (SH) {
     build_tree: build_tree
   };
 })(SyntaxHighlighter);
-</script><title>yesparql -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name"><a href="http://github.com/joelkuiper/yesparql">yesparql</a></h1><h2 class="project-version">0.2.0-SNAPSHOT</h2><br /><p>YeSPARQL, a Yesql inspired SPARQL library</p>
+</script><title>yesparql -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name"><a href="http://github.com/joelkuiper/yesparql">yesparql</a></h1><h2 class="project-version">0.2.0-beta3</h2><br /><p>YeSPARQL, a Yesql inspired SPARQL library</p>
 </div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.7.0</td></tr><tr><td class="dep-name">instaparse</td><td class="dotted"><hr /></td><td class="dep-version">1.4.1</td></tr><tr><td class="dep-name">org.apache.jena/jena-arq</td><td class="dotted"><hr /></td><td class="dep-version">3.0.0</td></tr><tr><td class="dep-name">org.apache.jena/jena-text</td><td class="dotted"><hr /></td><td class="dep-version">3.0.0</td></tr><tr><td class="dep-name">org.apache.jena/jena-core</td><td class="dotted"><hr /></td><td class="dep-version">3.0.0</td></tr><tr><td class="dep-name">org.apache.jena/jena-querybuilder</td><td class="dotted"><hr /></td><td class="dep-version">3.0.0</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#yesparql.core">yesparql.core</a></li><li><a href="#yesparql.generate">yesparql.generate</a></li><li><a href="#yesparql.instaparse-util">yesparql.instaparse-util</a></li><li><a href="#yesparql.queryfile-parser">yesparql.queryfile-parser</a></li><li><a href="#yesparql.sparql">yesparql.sparql</a></li><li><a href="#yesparql.tdb">yesparql.tdb</a></li><li><a href="#yesparql.types">yesparql.types</a></li><li><a href="#yesparql.util">yesparql.util</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#yesparql.core" name="yesparql.core"><h1 class="project-name">yesparql.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(ns yesparql.core
   (:require [yesparql.util :refer [slurp-from-classpath]]
@@ -2956,6 +2956,7 @@ be worth keeping for that reason alone.</p>
     (with-meta generated-fn
       (merge {:name name
               :arglists display-args
+              :tag 'java.lang.AutoCloseable
               ::source (str statement)}
              (when docstring
                {:doc docstring})))))</pre></td></tr><tr><td class="docs">
@@ -3040,7 +3041,7 @@ be worth keeping for that reason alone.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn reset-if-rewindable!
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
-    (.reset result)))</pre></td></tr><tr><td class="docs"><p>bit of a JavaScript-ism to return nil on an empty string.</p>
+    (.reset result)))</pre></td></tr><tr><td class="docs"><p>JavaScript-ism to return nil on an empty string.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn falsey-string
   [str]
   (if (empty? str) nil str))</pre></td></tr><tr><td class="docs"><p>Returns a copy of a <code>ResultSet</code> allowing it to be re-used.</p>
@@ -3088,21 +3089,21 @@ be worth keeping for that reason alone.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ^Literal clj-&gt;literal
   [{:keys [value type lang]}]
   (cond
-    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. type))
+    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. (str type)))
     lang (.createLiteral default-model (str value) (keyword-str lang))
     :else (.createTypedLiteral default-model value)))</pre></td></tr><tr><td class="docs">
 </td><td class="codes"><pre class="brush: clojure">(defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
-  (ParameterizedSparqlString. statement))</pre></td></tr><tr><td class="docs"><p>The <code>query</code> string will be formatted as a <code>ParameterizedSparqlString</code>
-   and can be provided with a map of <code>bindings</code>.
+  (ParameterizedSparqlString. statement))</pre></td></tr><tr><td class="docs"><p>The <code>query</code> can be provided with a map of <code>bindings</code>.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
-   or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
-   Any other type (e.g. string, float) will be set as Literal.</p>
+   or a int->URL, int->URI, int->Node or int->RDFNode, for positional parameters.
+   Any other type (e.g. String, Float) will be set as Literal.</p>
 
-<p>   Alternatively, you can supply a map of <code>{:type (optional, uri), :lang (optional, str or keyword), :value}</code>
+<p>   Alternatively, you can supply a map of
+   <code>{:type (optional, uri or string), :lang (optional, str or keyword), :value}</code>
    which will be coerced to the appropriate <code>Literal</code> automatically.</p>
 
-<p>   Does not warn if setting a binding that does not exist. </p>
+<p>   Does not warn when setting a binding that does not exist.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn ^ParameterizedSparqlString query-with-bindings
   [^ParameterizedSparqlString pq bindings]
   (doall
@@ -3249,8 +3250,8 @@ be worth keeping for that reason alone.</p>
   Clojure format. ASK returns a boolean.</p>
 
 <p>   See also: <code>-&gt;result</code> (SELECT), <code>-&gt;model</code> (DESCRIBE, CONSTRUCT) and
-  <code>-&gt;query-execution</code>. And the <code>result-&gt;csv</code>..., and <code>model-&gt;json-ld</code>
-  convenience methods for serialization.</p>
+  <code>-&gt;query-execution</code>. Or use the <code>result-&gt;csv</code>..., and <code>model-&gt;json-ld</code>
+  convenience methods for serialization to strings.</p>
 
 <p>   WARNING: The underlying <code>QueryExecution</code> must be closed in order to
   prevent resources from leaking. Call the query in a <code>with-open</code> or
