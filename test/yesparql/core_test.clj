@@ -11,7 +11,7 @@
 
 (defn triple-count
   [results]
-  (count (get-in (result->clj (->result results)) [:results :bindings])))
+  (count (into [] results)))
 
 (def tdb (tdb/create-in-memory))
 
@@ -41,29 +41,52 @@
 
 (expect true (ask-book))
 
-(expect true (not (nil? (model->json-ld (->model (construct-books))))))
+(expect
+ [{:s "http://example/book0",
+   :p "http://purl.org/dc/elements/1.1/title",
+   :o {:type "http://www.w3.org/2001/XMLSchema#string", :value "A default book"}}
+  {:s "http://example/book1",
+   :p "http://purl.org/dc/elements/1.1/title",
+   :o {:type "http://www.w3.org/2001/XMLSchema#string", :value "A new book"}}
+  {:s "http://example/book2",
+   :p "http://purl.org/dc/elements/1.1/title",
+   :o {:type "http://www.w3.org/2001/XMLSchema#string", :value "A second book"}}
+  {:s "http://example/book3",
+   :p "http://purl.org/dc/elements/1.1/title",
+   :o {:type "http://www.w3.org/2001/XMLSchema#string", :value "A third book"}}]
+ (into [] (map #(into {} %) (construct-books)))) ; returns yesparql.sparql.Triple
 
+;; Test conversion
 (expect true (not (nil? (model->rdf+xml (result->model (->result (select-all)))))))
+(expect true (not (nil? (result->xml (->result (select-all))))))
 
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"
   {:connection tdb})
 
-(expect {:type "literal", :value "A default book"}
-        (:title (first (get-in
-                        (result->clj (->result (select-book {:bindings {"book" (URI. "http://example/book0")}})))
-                        [:results :bindings]))))
-
 ;; Test with function override
 (expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
-        (select-all {:query-fn (fn [data-set query call-options & args]  (str query))}))
+        (select-all {:query-fn (fn [data-set query call-options]  (str query))}))
 
 ;; Test with comments
 (defquery select-foo
   "yesparql/samples/with-comments.sparql"
   {:connection tdb})
 
-(expect true (not (nil? (->result (select-foo)))))
+(expect
+ [{"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A default book"},
+   "subject" "http://example/book0",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}
+  {"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A new book"},
+   "subject" "http://example/book1",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}
+  {"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A second book"},
+   "subject" "http://example/book2",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}
+  {"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "A third book"},
+   "subject" "http://example/book3",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}]
+ (into [] (select-foo)))
 
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select

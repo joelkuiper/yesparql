@@ -12,10 +12,6 @@
              "current_time" "current-time"
              "this_is_it" "this-is-it")
 
-;;; Test slurp-from-classpath
-(expect java.io.FileNotFoundException
-        (slurp-from-classpath "nothing/here"))
-
 ;;; Test str-non-nil
 (expect "" (str-non-nil))
 

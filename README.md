@@ -5,6 +5,8 @@
 
 YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query/) queries against endpoints or [TDB stores](https://jena.apache.org/documentation/tdb/index.html), heavily influenced by [Yesql](https://github.com/krisajenkins/yesql).
 
+[Annotated Source](https://joelkuiper.github.io/yesparql/uberdoc.html)
+
 
 ## Installation
 [![Clojars Project](http://clojars.org/yesparql/latest-version.svg)](http://clojars.org/yesparql)
@@ -12,7 +14,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.2.0-beta2"]
+[yesparql "0.2.0-beta3"]
 ```
 
 ## What's the point?
@@ -30,11 +32,11 @@ Other perks include:
 
 
 ## Eeh, I meant what's the point of SPARQL?
-See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web) or see [SPARQL by Example](http://www.cambridgesemantics.com/semantic-university/sparql-by-example)
+See my introductory blog post on Semantic Web and SPARQL: [Whatever happened to Semantic Web?](https://joelkuiper.eu/semantic-web) or see [SPARQL by Example](http://www.cambridgesemantics.com/semantic-university/sparql-by-example).
 
 ## Usage
 ### One File, One Query
-Create an SPARQL query.
+Create an SPARQL query and save it as a file.
 
 ```sparql
 -- Example dbpedia query, returning intellectuals restricted by subject
@@ -61,7 +63,7 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 
 ;; Import the SPARQL query as a function.
 ;; In this case we use DBPedia as a remote endpoint
-(defquery select-intellectuals "some/where/select-intellectuals.sparql"
+(defquery select-intellectuals "some/where/query.sparql"
   {:connection "http://dbpedia.org/sparql"})
 
 ;; The function is now available in the namespace
@@ -75,14 +77,17 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
 ;=> Endpoint: http://dbpedia.org/sparql
 
 ;; Running the query is as easy as calling the function in a with-open
+;; The result is a lazy sequence of Clojure data structures
 (with-open [result (select-intellectuals)]
   (do-something-with-result! result))
 ```
 
 You can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
+Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}` which will be coerced to the appropriate `Literal` automatically.
+
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 
-In addition you can add `limit`, `offset`, `group-by` and `order-by` fields at query time.
+In addition you can overwrite `limit`, `offset`, fields at query time.
 
 A complete example of running a SPARQL SELECT against [DBPedia](http://wiki.dbpedia.org/), with initial bindings and limit:
 
@@ -129,7 +134,7 @@ user> (with-open [result (select-intellectuals)]
 ;=> http://dbpedia.org/resource/B%C3%A9la_Bollob%C3%A1s
 ```
 
-**WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/) or be closed manually.
+**WARNING**: Queries should be called in a `with-open` in order to close the underlying [`QueryExecution`](https://jena.apache.org/documentation/javadoc/arq/), or be closed manually.
 The underlying `ResultSet` (and result iterator) will become invalid after closing (see `copy-result-set`).
 While it is completely possible to not close the result, it will leak resources and is not advisable.
 
@@ -181,11 +186,9 @@ user> (require '[yesparql.sparql :refer :all])
 
 user> (def result
         (with-open [result (select-intellectuals)]
-        (copy-result-set (->result result))))
+          (copy-result-set (->result result))))
 
 ;; Converting results...
-
-user> (result->clj result) ; converts to a Clojure map using the JSON serialization
 user> (result->json result)
 user> (result->csv result)
 user> (result->xml result) ; NOT RDF, but the SPARQL RDF result format
@@ -193,18 +196,15 @@ user> (result->xml result) ; NOT RDF, but the SPARQL RDF result format
 You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`; or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
 
 ```clojure
-
 ;; Convert to model
 user> (def model (result->model result))
 
 ;; Then choose one of the serializations...
-
 user> (model->json-ld model)
 user> (model->rdf+xml model)
 user> (model->ttl model)
 
 ;; Or use one of the other serialization formats
-
 user> (serialize-model model "format")
 ```
 
@@ -215,7 +215,7 @@ If a `ResultSet` has to be traversed multiple times use the `copy-result-set`, w
 See also [`ResultSetFactory/makeRewindable`](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetFactory.html#makeRewindable-org.apache.jena.rdf.model.Model-).
 
 ## A note on lazyness
-The results are returned in a lazy fashion, but the `ResultSet` will become invalid after closing the result. So this won't work
+The results are returned in a lazy fashion, but the underlying `ResultSet` will become invalid after closing the result. So this won't work:
 
 ```clojure
 (with-open [r (select-intellectuals)] (map println r))
@@ -223,7 +223,6 @@ The results are returned in a lazy fashion, but the `ResultSet` will become inva
 ARQException ResultSet no longer valid (QueryExecution has been
 closed) org.apache.jena.sparql.engine.ResultSetCheckCondition.check
 (ResultSetCheckCondition.java:106)
-
 ```
 
 Instead do:
@@ -251,8 +250,6 @@ In general make sure you do any and all work you want to do on the results *eage
 - TDB Text API (with Lucene)
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
-- More tests
-- Better docstrings
 
 ## New to Clojure?
 If you are new to Clojure the code might look unfamiliar.

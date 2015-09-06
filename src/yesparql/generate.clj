@@ -20,9 +20,10 @@
 (defn- connection-error
   [name]
   (format
-   (join "\n"
-         ["No database connection supplied to function '%s',"
-          "Check the docs, and supply {:connection ...} as an option to the function call, or globally to the defquery declaration."])
+   (join
+    "\n"
+    ["No database connection supplied to function '%s',"
+     "Check the docs, and supply {:connection ...} as an option to the function call, or globally to the declaration."])
    name))
 
 (defn generate-query-fn
@@ -56,6 +57,7 @@
     (with-meta generated-fn
       (merge {:name name
               :arglists display-args
+              :tag 'java.lang.AutoCloseable
               ::source (str statement)}
              (when docstring
                {:doc docstring})))))

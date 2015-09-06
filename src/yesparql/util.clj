@@ -4,8 +4,6 @@
             [clojure.pprint :refer [pprint]])
   (:import [java.io FileNotFoundException]))
 
-;; From https://github.com/krisajenkins/yesql/blob/devel/src/yesql/util.clj
-
 (defn underscores-to-dashes
   [string]
   (when string

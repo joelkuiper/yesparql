@@ -1,8 +1,6 @@
 (ns yesparql.sparql
   (:refer-clojure :exclude [update])
-  (:require [cheshire.core :as json])
   (:import
-   [clojure.lang.Reflector]
    [java.lang.IllegalArgumentException]
    [java.net URL URI]
    [org.apache.jena.graph Node]
@@ -23,20 +21,19 @@
     ParameterizedSparqlString
     ResultSetFactory ResultSet ResultSetFormatter]))
 
-;; Util
 (defn ^java.io.OutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
-  "Resets a `RewindableResulSet
+  "Resets a `RewindableResulSet`
 
-   See: https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html"
+   See: [ResultSetRewindable](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html)."
   [^ResultSet result]
   (when (instance? org.apache.jena.query.ResultSetRewindable result)
     (.reset result)))
 
 (defn falsey-string
-  "bit of a JavaScript-ism to return nil on an empty string"
+  "JavaScript-ism to return nil on an empty string."
   [str]
   (if (empty? str) nil str))
 
@@ -50,11 +47,10 @@
   [^ResultSet result]
   (ResultSetFactory/copyResults result))
 
-;; Serialize model
 (defn serialize-model
   "Serializes a `Model` to a string
 
-   See: https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats"
+   See: [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats)."
   [^Model model ^String format]
   (with-open [w (java.io.StringWriter.)]
     (.write model w format)
@@ -63,15 +59,9 @@
 (defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
 (defn model->ttl [^Model model] (serialize-model model "TTL"))
 (defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
-(defn model->clj
-  "Converts a `Model` to a native Clojure data structure via JSON-LD.
-   Note that this may not be preferable for large results due to memory constraints."
-  [^Model model]
-  (json/decode (model->json-ld model) true))
 
-;; Serialize ResultSet
 (defmacro serialize-result
-  "Serializes a model to a string"
+  "Serializes a `Result` to a string"
   [method result]
   `(let [output# (output-stream)]
      (try
@@ -88,33 +78,41 @@
 (defn result->csv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsCSV result))
 (defn result->tsv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
 
-(defn result->clj
-  "Converts a `ResultSet` to a native Clojure data type by using the
-   JSON SPARQL QUERY response as an intermediate representation."
-  [^ResultSet result]
-  (json/decode (result->json result) true))
-
 (defn result->model
   "Converts `ResultSet` to a `Model`.
+
    NOTE: CONSTRUCT and DESCRIBE queries are better suited for conversion to `Model`."
   [^ResultSet result]
   (let [^RDFOutput rdf (RDFOutput.)]
     (reset-if-rewindable! result)
     (.asModel rdf ^ResultSet result)))
 
-;; Query construction
+(def ^Model default-model (org.apache.jena.rdf.model.ModelFactory/createDefaultModel))
+
+(defn keyword-str [kw] (if (keyword? kw) (name kw) kw))
+
+(defn ^Literal clj->literal
+  [{:keys [value type lang]}]
+  (cond
+    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. (str type)))
+    lang (.createLiteral default-model (str value) (keyword-str lang))
+    :else (.createTypedLiteral default-model value)))
+
 (defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
   (ParameterizedSparqlString. statement))
 
 (defn ^ParameterizedSparqlString query-with-bindings
-  "The `query` string will be formatted as a `ParameterizedSparqlString`
-   and can be provided with a map of `bindings`.
+  "The `query` can be provided with a map of `bindings`.
    Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
-   or a int->URL, int->URI, int->Node or int->RDFNode for positional parameters.
+   or a int->URL, int->URI, int->Node or int->RDFNode, for positional parameters.
+   Any other type (e.g. String, Float) will be set as Literal.
 
-   Any other type (e.g. string, float) will be set as Literal.
-   Does not warn if setting a binding that does not exist. "
+   Alternatively, you can supply a map of
+   `{:type (optional, uri or string), :lang (optional, str or keyword), :value}`
+   which will be coerced to the appropriate `Literal` automatically.
+
+   Does not warn when setting a binding that does not exist."
   [^ParameterizedSparqlString pq bindings]
   (doall
    (map
@@ -123,18 +121,20 @@
                    (string? var) var
                    (integer? var) (int var)
                    :else
-                   (throw java.lang.IllegalArgumentException
-                          "ParameterizedSparqlString binding keys must be strings or integers"))]
-        (condp instance? resource
-          URL (.setIri pq subs ^URL resource)
-          URI (.setIri pq subs ^String (str resource))
-          Node (.setParam pq subs ^Node resource)
-          RDFNode (.setParam pq subs ^RDFNode resource)
-          (.setLiteral pq subs resource))))
+                   (throw (java.lang.IllegalArgumentException.
+                           "ParameterizedSparqlString binding keys must be strings or integers")))]
+        (if (map? resource)
+          (.setLiteral pq subs (clj->literal resource))
+
+          (condp instance? resource
+            URL (.setIri pq subs ^URL resource)
+            URI (.setIri pq subs ^String (str resource))
+            Node (.setParam pq subs ^Node resource)
+            RDFNode (.setParam pq subs ^RDFNode resource)
+            (.setLiteral pq subs resource)))))
     bindings))
   pq)
 
-;; Conversion to native Clojure format from Jena types
 (defn- with-type
   [f ^Node_Literal literal]
   (if-let [lang (falsey-string (.getLiteralLanguage literal))]
@@ -177,13 +177,15 @@
 
 (deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
   clojure.lang.Seqable
-  (seq [_] (map result-binding->clj (iterator-seq rs)))
+  (seq [_]
+    (when-let [iseq (seq (iterator-seq rs))]
+      (map result-binding->clj iseq)))
   java.lang.AutoCloseable
   (close [_] (.close qe)))
 
 (defn ->query-execution
-  "Return the underlying `QueryExecution` from the query results"
-  [t] (.qe t))
+  "Returns the underlying `QueryExecution` from the query results"
+  [r] (.qe r))
 
 (defn ->result
   "Returns the underlying `ResultSet` from the query results
@@ -204,7 +206,9 @@
 
 (deftype CloseableModel [^QueryExecution qe ^java.util.Iterator t]
   clojure.lang.Seqable
-  (seq [this] (map statement->clj (iterator-seq t)))
+  (seq [this]
+    (when-let [iseq (seq (iterator-seq t))]
+      (map statement->clj iseq)))
   java.lang.AutoCloseable
   (close [this] (.close qe)))
 
@@ -228,7 +232,6 @@
   [^CloseableModel m]
   (.t m))
 
-;; Query
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
   (QueryExecutionFactory/sparqlService
@@ -259,7 +262,6 @@
 (defmethod query* "execConstructTriples" [^QueryExecution q-exec] (.execConstructTriples q-exec))
 (defmethod query* "execDescribeTriples" [^QueryExecution q-exec] (.execDescribeTriples q-exec))
 
-
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
   (let [^Query q (.asQuery pq)
@@ -274,11 +276,7 @@
       (.setOffset query (long offset)))
     (when-let [limit (:limit call-options)]
       (.setLimit query (long limit)))
-    (when-let [order-by (:order-by call-options)]
-      (.addOrderBy {:var order-by} (int {:direction order-by})))
-    (when-let [group-by (:group-by call-options)]
-      (.addGroupBy query group-by)))
-  query)
+    query))
 
 
 (defn query
@@ -292,12 +290,12 @@
   Clojure format. ASK returns a boolean.
 
    See also: `->result` (SELECT), `->model` (DESCRIBE, CONSTRUCT) and
-  `->query-execution`. And the `result->csv`..., and `model->json-ld`
-  convenience methods for serialization.
+  `->query-execution`. Or use the `result->csv`..., and `model->json-ld`
+  convenience methods for serialization to strings.
 
    WARNING: The underlying `QueryExecution` must be closed in order to
   prevent resources from leaking. Call the query in a `with-open` or
-  close manually with (.close (->query-execution (query))). "
+  close manually with `(.close (->query-execution (query)))`. "
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
         query (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
@@ -312,7 +310,6 @@
       (try (query* query-execution)
            (finally (.close query-execution))))))
 
-;; Update
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
   (UpdateExecutionFactory/createRemote update ^String connection))
