@@ -266,6 +266,10 @@ But, Clojure is a wonderful language, and if you are interested in learning we r
 - [Jozef Wagner](https://github.com/wagjo)
 - [Rick Moynihan](https://github.com/RickMoynihan)
 
+## Funding
+
+This software was commissioned and sponsored by Doctor Evidence. The Doctor Evidence mission is to improve clinical outcomes by finding and delivering medical evidence to healthcare professionals, medical associations, policy makers and manufacturers through revolutionary solutions that enable anyone to make informed decisions and policies using medical data that is more accessible, relevant and readable.
+
 ## License
 
 Copyright © 2015 Joel Kuiper
