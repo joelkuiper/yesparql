@@ -191,7 +191,7 @@ user> (def result
 ;; Converting results...
 user> (result->json result)
 user> (result->csv result)
-user> (result->xml result) ; NOT RDF, but the SPARQL RDF result format
+user> (result->xml result) ; NOT XML, but the SPARQL RDF result format
 ```
 You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`; or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
 
@@ -268,7 +268,7 @@ But, Clojure is a wonderful language, and if you are interested in learning we r
 
 ## Funding
 
-This software was commissioned and sponsored by Doctor Evidence. The Doctor Evidence mission is to improve clinical outcomes by finding and delivering medical evidence to healthcare professionals, medical associations, policy makers and manufacturers through revolutionary solutions that enable anyone to make informed decisions and policies using medical data that is more accessible, relevant and readable.
+This software was commissioned and sponsored by [Doctor Evidence](http://doctorevidence.com/). The Doctor Evidence mission is to improve clinical outcomes by finding and delivering medical evidence to healthcare professionals, medical associations, policy makers and manufacturers through revolutionary solutions that enable anyone to make informed decisions and policies using medical data that is more accessible, relevant and readable.
 
 ## License
 
