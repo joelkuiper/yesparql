@@ -191,7 +191,7 @@ user> (def result
 ;; Converting results...
 user> (result->json result)
 user> (result->csv result)
-user> (result->xml result) ; NOT XML, but the SPARQL RDF result format
+user> (result->xml result) ; NOT RDF, but the SPARQL XML result format
 ```
 You can use `result->model` to convert a `ResultSet` (SELECT) to a `Model`; or use `->model` on the result of CONSTRUCT and DESCRIBE queries.
 
