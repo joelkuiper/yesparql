@@ -49,10 +49,12 @@
             (handler-fn connection (.copy query false) call-options)))
         [display-args generated-fn]
         (let [global-args {:keys ['connection 'bindings]}]
-          [(list [] [global-args])
+          [(list [] [global-args] [global-args 'kv-bindings*])
            (fn query-wrapper-fn
              ([] (query-wrapper-fn {}))
-             ([call-options] (real-fn call-options)))])]
+             ([call-options] (real-fn call-options))
+             ([call-options & {:as arg-bindings}]
+              (real-fn (update call-options :bindings merge arg-bindings))))])]
 
     (with-meta generated-fn
       (merge {:name name
