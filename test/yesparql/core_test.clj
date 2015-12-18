@@ -2,7 +2,7 @@
   (:import [java.net URI URL URLEncoder])
   (:require [clojure.string :refer [upper-case]]
             [expectations :refer :all]
-
+            [clojure.java.io :as io]
             [yesparql.tdb :as tdb]
             [yesparql.sparql :refer :all]
             [yesparql.core :refer :all]))
@@ -59,6 +59,13 @@
 ;; Test conversion
 (expect true (not (nil? (model->rdf+xml (result->model (->result (select-all)))))))
 (expect true (not (nil? (result->xml (->result (select-all))))))
+
+(def json-result "{\n  \"head\": {\n    \"vars\": [ \"subject\" , \"predicate\" , \"object\" ]\n  } ,\n  \"results\": {\n    \"bindings\": [\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book0\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A default book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book1\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A new book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book2\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A second book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book3\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A third book\" }\n      }\n    ]\n  }\n}\n")
+(expect json-result (result->json (->result (select-all))))
+
+(expect json-result
+        (with-open [out (java.io.ByteArrayOutputStream.)]
+          (.toString (result->json (->result (select-all)) out) "UTF-8")))
 
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"
