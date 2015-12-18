@@ -47,17 +47,28 @@
   (ResultSetFactory/copyResults result))
 
 (defn serialize-model
-  "Serializes a `Model` to a string
+  "Serializes a `Model` to a string or to an output stream
 
    See: [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats)."
-  [^Model model ^String format]
-  (with-open [w (java.io.StringWriter.)]
-    (.write model w format)
-    (str w)))
+  ([^Model model ^String format ^java.io.OutputStream out]
+   (.write model out format)
+   out)
+  ([^Model model ^String format]
+   (with-open [w (java.io.StringWriter.)]
+     (.write model w format)
+     (str w))))
 
-(defn model->rdf+xml [^Model model] (serialize-model model "RDF/XML"))
-(defn model->ttl [^Model model] (serialize-model model "TTL"))
-(defn model->json-ld [^Model model] (serialize-model model "JSONLD"))
+(defn model->rdf+xml
+  ([^Model model] (serialize-model model "RDF/XML"))
+  ([^Model model ^java.io.OutputStream out] (serialize-model model "RDF/XML" out)))
+
+(defn model->ttl
+  ([^Model model] (serialize-model model "TTL"))
+  ([^Model model ^java.io.OutputStream out] (serialize-model model "TTL" out)))
+
+(defn model->json-ld
+  ([^Model model] (serialize-model model "JSONLD"))
+  ([^Model model ^java.io.OutputStream out] (serialize-model model "JSONLD" out)))
 
 (defmacro serialize-result
   "Serializes a `Result` to a string"

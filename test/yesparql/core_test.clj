@@ -57,10 +57,20 @@
  (into [] (map #(into {} %) (construct-books)))) ; returns yesparql.sparql.Triple
 
 ;; Test conversion
-(expect true (not (nil? (model->rdf+xml (result->model (->result (select-all)))))))
+(def model-ttl
+  "@prefix rs:    <http://www.w3.org/2001/sw/DataAccess/tests/result-set#> .\n@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .\n\n[ a                  rs:ResultSet ;\n  rs:resultVariable  \"object\" , \"predicate\" , \"subject\" ;\n  rs:size            \"4\"^^xsd:int ;\n  rs:solution        [ rs:binding  [ rs:value     \"A third book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book3> ;\n                          rs:variable  \"subject\"\n                        ] ] ;\n  rs:solution        [ rs:binding  [ rs:value     \"A second book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book2> ;\n                          rs:variable  \"subject\"\n                        ] ] ;\n  rs:solution        [ rs:binding  [ rs:value     \"A new book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book1> ;\n                          rs:variable  \"subject\"\n                        ] ] ;\n  rs:solution        [ rs:binding  [ rs:value     \"A default book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book0> ;\n                          rs:variable  \"subject\"\n                        ] ]\n] .\n")
+
+(expect model-ttl (model->ttl (result->model (->result (select-all)))))
+
+(expect model-ttl
+        (with-open [out (java.io.ByteArrayOutputStream.)]
+          (.toString
+           (model->ttl (result->model (->result (select-all))) out) "UTF-8")))
+
 (expect true (not (nil? (result->xml (->result (select-all))))))
 
 (def json-result "{\n  \"head\": {\n    \"vars\": [ \"subject\" , \"predicate\" , \"object\" ]\n  } ,\n  \"results\": {\n    \"bindings\": [\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book0\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A default book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book1\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A new book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book2\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A second book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book3\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A third book\" }\n      }\n    ]\n  }\n}\n")
+
 (expect json-result (result->json (->result (select-all))))
 
 (expect json-result
