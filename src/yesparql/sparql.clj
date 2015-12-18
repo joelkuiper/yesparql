@@ -20,7 +20,7 @@
     QueryExecutionFactory QueryFactory QuerySolutionMap
     ParameterizedSparqlString ResultSetFactory ResultSet ResultSetFormatter]))
 
-(defn ^java.io.OutputStream output-stream []
+(defn- ^java.io.OutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
