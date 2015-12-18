@@ -327,7 +327,6 @@
   (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
         query (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
         query-type (query-type query)]
-    (when-let [limit ()])
     (cond
       (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
