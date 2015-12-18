@@ -54,9 +54,9 @@
    (.write model out format)
    out)
   ([^Model model ^String format]
-   (with-open [w (java.io.StringWriter.)]
-     (.write model w format)
-     (str w))))
+   (with-open [out (output-stream)]
+     (serialize-model model format out)
+     (.toString out "UTF-8"))))
 
 (defn model->rdf+xml
   ([^Model model] (serialize-model model "RDF/XML"))
