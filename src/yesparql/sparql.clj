@@ -18,8 +18,7 @@
    [org.apache.jena.query
     Query QuerySolution QueryExecution
     QueryExecutionFactory QueryFactory QuerySolutionMap
-    ParameterizedSparqlString
-    ResultSetFactory ResultSet ResultSetFormatter]))
+    ParameterizedSparqlString ResultSetFactory ResultSet ResultSetFormatter]))
 
 (defn ^java.io.OutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
@@ -62,21 +61,38 @@
 
 (defmacro serialize-result
   "Serializes a `Result` to a string"
-  [method result]
-  `(let [output# (output-stream)]
-     (try
-       (do
-         (reset-if-rewindable! ~result)
-         (~method ^java.io.OutputStream output# ^ResultSet ~result)
-         (.toString output# "UTF-8"))
-       (finally (.close output#)))))
+  ([method result output-stream]
+   `(do
+      (reset-if-rewindable! ~result)
+      (~method ^java.io.OutputStream ~output-stream ^ResultSet ~result)
+      ~output-stream))
+  ([method result]
+   `(let [output# (output-stream)]
+      (try
+        (do
+          (serialize-result ~method ~result output#)
+          (.toString output# "UTF-8"))
+        (finally (.close output#))))))
 
-(defn result->json [^ResultSet result] (serialize-result ResultSetFormatter/outputAsJSON result))
-(defn result->text [^ResultSet result] (ResultSetFormatter/asText result))
+(defn result->json
+  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsJSON result))
+  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsJSON result out)))
 
-(defn result->xml [^ResultSet result] (serialize-result ResultSetFormatter/outputAsXML result))
-(defn result->csv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsCSV result))
-(defn result->tsv [^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
+(defn result->text
+  ([^ResultSet result] (ResultSetFormatter/asText result))
+  ([^ResultSet result ^java.io.OutputStream out] (ResultSetFormatter/asText result out)))
+
+(defn result->xml
+  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsXML result))
+  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsXML result out)))
+
+(defn result->csv
+  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsCSV result))
+  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsCSV result out)))
+
+(defn result->tsv
+  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
+  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsTSV result out)))
 
 (defn result->model
   "Converts `ResultSet` to a `Model`.
