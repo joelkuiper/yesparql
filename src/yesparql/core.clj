@@ -29,7 +29,7 @@
 
 ;;; defquery is a macro solely because of the unquoted symbol it accepts
 ;;; as its first argument. It is tempting to deprecate defquery. There
-;;; again, it makes things so easy to get started with yesql it might
+;;; again, it makes things so easy to get started with yesparql it might
 ;;; be worth keeping for that reason alone.
 (defmacro defquery
   "Defines a query function, as defined in the given SPARQL file.

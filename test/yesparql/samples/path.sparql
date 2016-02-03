@@ -1,0 +1,7 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+SELECT DISTINCT ?parent
+WHERE {
+  GRAPH ?g {
+    <http://dbpedia.org/class/yago/ShipwrecksOfQueensland> rdfs:subClassOf{1,5} ?parent .
+    FILTER(?parent != <http://www.w3.org/2002/07/owl#Thing>)
+  }} GROUP BY ?parent

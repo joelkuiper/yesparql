@@ -1,4 +1,4 @@
-(defproject yesparql "0.2.2"
+(defproject yesparql "0.2.3"
   :description "YeSPARQL, a Yesql inspired SPARQL library"
   :url "http://github.com/joelkuiper/yesparql"
   :license {:name "Eclipse Public License"
@@ -13,8 +13,8 @@
              :1.5 {:dependencies [[org.clojure/clojure "1.5.1"]]}
              :1.6 {:dependencies [[org.clojure/clojure "1.6.0"]]}
              :1.7 {:dependencies [[org.clojure/clojure "1.7.0"]]}
-             :1.8 {:dependencies [[org.clojure/clojure "1.8.0-RC4"]]}}
-  :dependencies [[org.clojure/clojure "1.7.0"]
+             :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}}
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [instaparse "1.4.1"]
 
                  [org.apache.jena/jena-arq "3.0.1"]
