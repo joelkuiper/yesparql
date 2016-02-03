@@ -26,6 +26,9 @@
      "Check the docs, and supply {:connection ...} as an option to the function call, or globally to the declaration."])
    name))
 
+
+;;; Public API
+
 (defn generate-query-fn
   "Generate a function to run a query
    - if the name ends with `!` a SPARQL UPDATE will be executed
