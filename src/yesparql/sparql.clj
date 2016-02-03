@@ -14,9 +14,9 @@
    [org.apache.jena.query Dataset]
    [org.apache.jena.sparql.core DatasetGraph]
    [org.apache.jena.sparql.resultset RDFOutput]
-   [ org.apache.jena.graph Node Node_Literal Node_Blank Node_NULL Node_URI]
+   [org.apache.jena.graph Node Node_Literal Node_Blank Node_NULL Node_URI]
    [org.apache.jena.query
-    Query QuerySolution QueryExecution
+    Query QuerySolution QueryExecution Syntax
     QueryExecutionFactory QueryFactory QuerySolutionMap
     ParameterizedSparqlString ResultSetFactory ResultSet ResultSetFormatter]))
 
@@ -86,24 +86,34 @@
         (finally (.close output#))))))
 
 (defn result->json
-  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsJSON result))
-  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsJSON result out)))
+  ([^ResultSet result]
+   (serialize-result ResultSetFormatter/outputAsJSON result))
+  ([^ResultSet result ^java.io.OutputStream out]
+   (serialize-result ResultSetFormatter/outputAsJSON result out)))
 
 (defn result->text
-  ([^ResultSet result] (ResultSetFormatter/asText result))
-  ([^ResultSet result ^java.io.OutputStream out] (ResultSetFormatter/asText result out)))
+  ([^ResultSet result]
+   (ResultSetFormatter/asText result))
+  ([^ResultSet result ^java.io.OutputStream out]
+   (ResultSetFormatter/asText result out)))
 
 (defn result->xml
-  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsXML result))
-  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsXML result out)))
+  ([^ResultSet result]
+   (serialize-result ResultSetFormatter/outputAsXML result))
+  ([^ResultSet result ^java.io.OutputStream out]
+   (serialize-result ResultSetFormatter/outputAsXML result out)))
 
 (defn result->csv
-  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsCSV result))
-  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsCSV result out)))
+  ([^ResultSet result]
+   (serialize-result ResultSetFormatter/outputAsCSV result))
+  ([^ResultSet result ^java.io.OutputStream out]
+   (serialize-result ResultSetFormatter/outputAsCSV result out)))
 
 (defn result->tsv
-  ([^ResultSet result] (serialize-result ResultSetFormatter/outputAsTSV result))
-  ([^ResultSet result ^java.io.OutputStream out] (serialize-result ResultSetFormatter/outputAsTSV result out)))
+  ([^ResultSet result]
+   (serialize-result ResultSetFormatter/outputAsTSV result))
+  ([^ResultSet result ^java.io.OutputStream out]
+   (serialize-result ResultSetFormatter/outputAsTSV result out)))
 
 (defn result->model
   "Converts `ResultSet` to a `Model`.
@@ -291,7 +301,8 @@
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
-  (let [^Query q (.asQuery pq)
+  (let [qstr (.toString pq)
+        ^Query q (QueryFactory/create qstr Syntax/syntaxARQ)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))

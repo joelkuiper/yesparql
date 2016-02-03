@@ -164,3 +164,9 @@
    "subject" "http://example/book2",
    "predicate" "http://purl.org/dc/elements/1.1/title"}]
  (into [] (select-all {:limit 2 :offset 1})))
+
+
+(defquery with-arq "yesparql/samples/path.sparql"
+  {:connection "http://dbpedia.org/sparql"})
+
+(expect 5 (count (into [] (with-arq))))
