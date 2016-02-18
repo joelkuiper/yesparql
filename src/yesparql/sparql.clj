@@ -277,9 +277,7 @@
 
 (defn- query-exec*
   [connection query]
-  (QueryExecutionFactory/create
-   ^Query query
-   connection))
+  (QueryExecutionFactory/create ^Query query connection))
 
 (defmethod query-exec Dataset [connection query] (query-exec* connection query))
 (defmethod query-exec DatasetGraph [connection query] (query-exec* connection query))
