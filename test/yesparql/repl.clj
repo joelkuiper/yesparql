@@ -17,7 +17,7 @@
     [result (select-intellectuals)]
     (into [] result)))
 
-(all)
+(clojure.pprint/print-table (all))
 
 ;; Run the query with some bindings
 ;; In this case we want all the intellectuals that were
@@ -31,4 +31,12 @@
         (URI. "http://dbpedia.org/resource/Category:Dutch_mathematicians")}})]
     (into [] result)))
 
-(dutch-mathematicians)
+(clojure.pprint/print-table (dutch-mathematicians))
+
+
+;;; Scratch
+(def s (yesparql.util/slurp-from-classpath "yesparql/samples/select-intellectuals.sparql"))
+
+(def pq (parameterized-query s))
+
+(def q (.asQuery pq))

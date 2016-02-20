@@ -11,6 +11,7 @@
    [org.apache.jena.rdf.model Model
     StmtIterator Statement Resource Property
     RDFNode Resource Literal]
+   [org.apache.jena.shared PrefixMapping]
    [org.apache.jena.query Dataset]
    [org.apache.jena.sparql.core DatasetGraph]
    [org.apache.jena.sparql.resultset RDFOutput]
@@ -131,9 +132,12 @@
 (defn ^Literal clj->literal
   [{:keys [value type lang]}]
   (cond
-    type (.createTypedLiteral default-model value (org.apache.jena.datatypes.BaseDatatype. (str type)))
-    lang (.createLiteral default-model (str value) (keyword-str lang))
-    :else (.createTypedLiteral default-model value)))
+    type (.createTypedLiteral
+          default-model value (org.apache.jena.datatypes.BaseDatatype. (str type)))
+    lang (.createLiteral
+          default-model (str value) (keyword-str lang))
+    :else (.createTypedLiteral
+           default-model value)))
 
 (defn ^ParameterizedSparqlString parameterized-query
   [^String statement]
@@ -150,22 +154,24 @@
    which will be coerced to the appropriate `Literal` automatically.
 
    Does not warn when setting a binding that does not exist."
-  [^ParameterizedSparqlString pq bindings]
+  [^ParameterizedSparqlString pq ^PrefixMapping prefixes bindings]
   (doall
    (map
     (fn [[var resource]]
-      (let [subs (cond
-                   (string? var) var
-                   (integer? var) (int var)
-                   :else
-                   (throw (java.lang.IllegalArgumentException.
-                           "ParameterizedSparqlString binding keys must be strings or integers")))]
+      (let [subs
+            (cond
+              (string? var) var
+              (keyword? var) (name var)
+              (integer? var) (int var)
+              :else
+              (throw (java.lang.IllegalArgumentException.
+                      "ParameterizedSparqlString binding keys must be strings, keywords or integers")))]
         (if (map? resource)
           (.setLiteral pq subs (clj->literal resource))
 
           (condp instance? resource
             URL (.setIri pq subs ^URL resource)
-            URI (.setIri pq subs ^String (str resource))
+            URI (.setIri pq subs ^String (.expandPrefix prefixes (str resource)))
             Node (.setParam pq subs ^Node resource)
             RDFNode (.setParam pq subs ^RDFNode resource)
             (.setLiteral pq subs resource)))))
@@ -279,9 +285,12 @@
   [connection query]
   (QueryExecutionFactory/create ^Query query connection))
 
-(defmethod query-exec Dataset [connection query] (query-exec* connection query))
-(defmethod query-exec DatasetGraph [connection query] (query-exec* connection query))
-(defmethod query-exec Model [connection query] (query-exec* connection query))
+(defmethod query-exec Dataset [connection query]
+  (query-exec* connection query))
+(defmethod query-exec DatasetGraph [connection query]
+  (query-exec* connection query))
+(defmethod query-exec Model [connection query]
+  (query-exec* connection query))
 
 (defn- query-type
   [^Query q]
@@ -291,16 +300,30 @@
     (.isAskType q) "execAsk"
     (.isDescribeType q) "execDescribeTriples"))
 
-(defmulti query* (fn [^QueryExecution q-exec] (query-type (.getQuery q-exec))))
-(defmethod query* "execSelect" [^QueryExecution q-exec] (.execSelect q-exec))
-(defmethod query* "execAsk" [^QueryExecution q-exec] (.execAsk q-exec))
-(defmethod query* "execConstructTriples" [^QueryExecution q-exec] (.execConstructTriples q-exec))
-(defmethod query* "execDescribeTriples" [^QueryExecution q-exec] (.execDescribeTriples q-exec))
+(defmulti query*
+  (fn [^QueryExecution q-exec] (query-type (.getQuery q-exec))))
+(defmethod query* "execSelect" [^QueryExecution q-exec]
+  (.execSelect q-exec))
+(defmethod query* "execAsk" [^QueryExecution q-exec]
+  (.execAsk q-exec))
+(defmethod query* "execConstructTriples" [^QueryExecution q-exec]
+  (.execConstructTriples q-exec))
+(defmethod query* "execDescribeTriples" [^QueryExecution q-exec]
+  (.execDescribeTriples q-exec))
+
+
+(def ^:dynamic *default-syntax* Syntax/syntaxARQ)
+
+(defn ^Query as-query
+  ([^String qstr]
+   (as-query *default-syntax* qstr))
+  ([^Syntax syntax ^String qstr]
+   (QueryFactory/create qstr syntax)))
 
 (defn- ->execution
   [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
-  (let [qstr (.toString pq)
-        ^Query q (QueryFactory/create qstr Syntax/syntaxARQ)
+  (let [^String qstr (.toString pq)
+        ^Query q (as-query qstr)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
@@ -332,10 +355,13 @@
    WARNING: The underlying `QueryExecution` must be closed in order to
   prevent resources from leaking. Call the query in a `with-open` or
   close manually with `(.close (->query-execution (query)))`. "
-  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
-  (let [query-execution (->execution connection (query-with-bindings pq bindings) call-options)
-        query (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
-        query-type (query-type query)]
+  [connection ^PrefixMapping prefixes ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
+  (let [query-execution
+        (->execution connection (query-with-bindings pq prefixes bindings) call-options)
+        query
+        (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
+        query-type
+        (query-type query)]
     (cond
       (= query-type "execSelect")
       (->CloseableResultSet query-execution (query* query-execution))
@@ -360,8 +386,9 @@
   `connection` can be a String for a SPARQL endpoint URL or `Dataset`, or `DatasetGraph`.
 
   Returns nil on success, or throws an Exception. "
-  [connection ^ParameterizedSparqlString pq {:keys [bindings]}]
-  (let [q (.toString (.asUpdate (query-with-bindings pq bindings)))
-        ^UpdateRequest update-request (UpdateFactory/create q)
-        ^UpdateProcessor processor (update-exec connection update-request)]
+  [connection ^PrefixMapping prefixes ^ParameterizedSparqlString pq {:keys [bindings]}]
+  (let [^UpdateRequest update-request
+        (.asUpdate (query-with-bindings pq prefixes bindings))
+        ^UpdateProcessor processor
+        (update-exec connection update-request)]
     (.execute processor)))

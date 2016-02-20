@@ -81,10 +81,6 @@
   "yesparql/samples/select-bindings.sparql"
   {:connection tdb})
 
-;; Test with function override
-(expect "SELECT ?subject ?predicate ?object\nWHERE {\n  ?subject ?predicate ?object\n}\nLIMIT 25"
-        (select-all {:query-fn (fn [data-set query call-options]  (str query))}))
-
 ;; Test with comments
 (defquery select-foo
   "yesparql/samples/with-comments.sparql"
@@ -112,8 +108,17 @@
 
 (expect 10
         (triple-count
-         (dbpedia-select {:timeout 500
-                          :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+         (dbpedia-select
+          {:timeout 500
+           :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
+
+;; Same thing but with prefixed uri and keyword
+(expect 10
+        (triple-count
+         (dbpedia-select
+          {:timeout 500
+           :bindings {:subject (URI. "category:1952_deaths")}})))
+
 
 (defquery drugbank
   "yesparql/samples/drugbank.sparql"
