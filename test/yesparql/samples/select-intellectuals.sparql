@@ -1,6 +1,3 @@
--- Example dbpedia query, returning intellectuals restricted by subject
--- Endpoint: http://dbpedia.org/sparql
-
 PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
 PREFIX dct: <http://purl.org/dc/terms/>
 PREFIX dbpedia-category: <http://dbpedia.org/resource/Category:>
