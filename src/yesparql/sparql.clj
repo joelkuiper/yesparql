@@ -13,16 +13,18 @@
     RDFNode Resource Literal]
    [org.apache.jena.shared PrefixMapping]
    [org.apache.jena.query Dataset]
-   [org.apache.jena.sparql.core DatasetGraph]
    [org.apache.jena.sparql.resultset RDFOutput]
    [org.apache.jena.rdf.model ModelFactory]
+   [org.apache.jena.datatypes BaseDatatype]
    [org.apache.jena.graph Node Node_Literal Node_Blank Node_NULL Node_URI]
+   [org.apache.jena.sparql.core Var ResultBinding]
    [org.apache.jena.query
     Query QuerySolution QueryExecution Syntax
     QueryExecutionFactory QueryFactory QuerySolutionMap
-    ParameterizedSparqlString ResultSetFactory ResultSet ResultSetFormatter]))
+    ParameterizedSparqlString ResultSetFactory
+    ResultSetRewindable ResultSet ResultSetFormatter]))
 
-(defn- ^java.io.OutputStream output-stream []
+(defn ^java.io.ByteArrayOutputStream output-stream []
   (java.io.ByteArrayOutputStream.))
 
 (defn reset-if-rewindable!
@@ -30,13 +32,13 @@
 
    See: [ResultSetRewindable](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/ResultSetRewindable.html)."
   [^ResultSet result]
-  (when (instance? org.apache.jena.query.ResultSetRewindable result)
-    (.reset result)))
+  (when (instance? ResultSetRewindable result)
+    (.reset ^ResultSetRewindable result)))
 
 (defn falsey-string
   "JavaScript-ism to return nil on an empty string."
   [str]
-  (if (empty? str) nil str))
+  (when (seq str) str))
 
 (defn copy-result-set
   "Returns a copy of a `ResultSet` allowing it to be re-used.
@@ -53,24 +55,29 @@
 
    See: [Jena Model Write formats](https://jena.apache.org/documentation/io/rdf-output.html#jena_model_write_formats)."
   ([^Model model ^String format ^java.io.OutputStream out]
-   (.write model out format)
-   out)
+   (.write model out format) out)
   ([^Model model ^String format]
    (with-open [out (output-stream)]
      (serialize-model model format out)
      (.toString out "UTF-8"))))
 
 (defn model->rdf+xml
-  ([^Model model] (serialize-model model "RDF/XML"))
-  ([^Model model ^java.io.OutputStream out] (serialize-model model "RDF/XML" out)))
+  ([^Model model]
+   (serialize-model model "RDF/XML"))
+  ([^Model model ^java.io.OutputStream out]
+   (serialize-model model "RDF/XML" out)))
 
 (defn model->ttl
-  ([^Model model] (serialize-model model "TTL"))
-  ([^Model model ^java.io.OutputStream out] (serialize-model model "TTL" out)))
+  ([^Model model]
+   (serialize-model model "TTL"))
+  ([^Model model ^java.io.OutputStream out]
+   (serialize-model model "TTL" out)))
 
 (defn model->json-ld
-  ([^Model model] (serialize-model model "JSONLD"))
-  ([^Model model ^java.io.OutputStream out] (serialize-model model "JSONLD" out)))
+  ([^Model model]
+   (serialize-model model "JSONLD"))
+  ([^Model model ^java.io.OutputStream out]
+   (serialize-model model "JSONLD" out)))
 
 (defmacro serialize-result
   "Serializes a `Result` to a string"
@@ -135,9 +142,9 @@
   [{:keys [value type lang]}]
   (cond
     type (.createTypedLiteral
-          default-model value (org.apache.jena.datatypes.BaseDatatype. (str type)))
+          default-model value (BaseDatatype. ^String (str type)))
     lang (.createLiteral
-          default-model (str value) (keyword-str lang))
+          default-model ^String (str value) ^String (keyword-str lang))
     :else (.createTypedLiteral
            default-model value)))
 
@@ -147,8 +154,7 @@
 
 (defn ^ParameterizedSparqlString query-with-bindings
   "The `query` can be provided with a map of `bindings`.
-   Each binding is a String->URL, String->URI, String->Node or String->RDFNode,
-   or a int->URL, int->URI, int->Node or int->RDFNode, for positional parameters.
+   Each binding is a String->URL, String->URI, String->Node or String->RDFNode.
    Any other type (e.g. String, Float) will be set as Literal.
 
    Alternatively, you can supply a map of
@@ -160,16 +166,15 @@
   (doall
    (map
     (fn [[var resource]]
-      (let [subs
+      (let [^String subs
             (cond
               (string? var) var
               (keyword? var) (name var)
-              (integer? var) (int var)
               :else
               (throw (java.lang.IllegalArgumentException.
                       "ParameterizedSparqlString binding keys must be strings, keywords or integers.")))]
         (if (map? resource)
-          (.setLiteral pq subs (clj->literal resource))
+          (.setLiteral pq ^String subs ^Literal (clj->literal resource))
           (condp instance? resource
             URL (.setIri pq subs ^URL resource)
             URI (.setIri pq subs ^String (.expandPrefix prefixes (str resource)))
@@ -179,7 +184,7 @@
     bindings))
   pq)
 
-(defn- with-type
+(defn with-type
   [f ^Node_Literal literal]
   (if-let [lang (falsey-string (.getLiteralLanguage literal))]
     {:type (.getLiteralDatatypeURI literal)
@@ -195,7 +200,7 @@
 
 (defmethod node->clj :default [^Node_Literal literal]
   (try
-    (with-type #(.getLiteralValue %) literal)
+    (with-type #(.getLiteralValue ^Node_Literal %) literal)
     (catch org.apache.jena.shared.JenaException e
       {:value (.getLiteralLexicalForm literal)
        :type (.getLiteralDatatypeURI literal)})))
@@ -213,10 +218,10 @@
   org.apache.jena.graph.Node_URI
   (convert [this] (.getURI this)))
 
-(defn- result-binding->clj
-  [^org.apache.jena.sparql.core.ResultBinding result-binding]
+(defn result-binding->clj
+  [^ResultBinding result-binding]
   (let [binding (.getBinding result-binding)]
-    (into {} (map (fn [v] [(.getVarName v) (convert (.get binding v))])
+    (into {} (map (fn [^Var v] [(.getVarName v) (convert (.get binding v))])
                   (iterator-seq (.vars binding))))))
 
 (deftype CloseableResultSet [^QueryExecution qe ^ResultSet rs]
@@ -235,7 +240,7 @@
   "Returns the underlying `ResultSet` from the query results
 
   See also: `copy-result-set` for a re-usable ResultSet"
-  [^ResultSet r]
+  [^CloseableResultSet r]
   (.rs r))
 
 (defrecord Triple [s p o])
@@ -269,6 +274,7 @@
           (ModelFactory/createDefaultModel)
           ^java.util.List statements
           (java.util.ArrayList.
+           ^java.util.Collection
            (doall (map #(.asStatement m %) (iterator-seq (.t model)))))]
       (.add m statements)
       m)))
@@ -284,18 +290,12 @@
    ^String connection
    ^Query query))
 
-(defn- query-exec*
-  [connection query]
-  (QueryExecutionFactory/create ^Query query connection))
-
 (defmethod query-exec Dataset [connection query]
-  (query-exec* connection query))
-(defmethod query-exec DatasetGraph [connection query]
-  (query-exec* connection query))
+  (QueryExecutionFactory/create ^Query query ^Dataset connection))
 (defmethod query-exec Model [connection query]
-  (query-exec* connection query))
+  (QueryExecutionFactory/create ^Query query ^Model connection))
 
-(defn- query-type
+(defn query-type
   [^Query q]
   (cond
     (.isSelectType q) "execSelect"
@@ -320,15 +320,15 @@
   ([^Syntax syntax ^String qstr]
    (QueryFactory/create qstr syntax)))
 
-(defn- ->execution
+(defn ->execution
   [connection ^ParameterizedSparqlString pq ^Syntax syntax {:keys [bindings timeout]}]
-  (let [^String qstr (.toString pq)
+  (let [^String qstr (str pq)
         ^Query q (as-query syntax qstr)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
 
-(defn- set-additional-fields
+(defn set-additional-fields
   [^Query query call-options]
   (do
     (when-let [offset (:offset call-options)]
@@ -341,7 +341,7 @@
 (defn query
   "Executes a SPARQL SELECT, ASK, DESCRIBE or CONSTRUCT based on the
   query type against the `connection`. `connection` can be a String
-  for a SPARQL endpoint URL or `Dataset`, `Model`, or `DatasetGraph`.
+  for a SPARQL endpoint URL or `Dataset`, `Model`.
 
    Returns a lazy-seq of results that can be traversed iteratively.
   SELECT returns a seq of `ResultBinding`s in a native Clojure format.
@@ -369,26 +369,25 @@
          query-execution
          (->execution connection pq syntax call-options)
          query
-         (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
+         (set-additional-fields
+          (.getQuery ^QueryExecution query-execution) call-options)
          query-type
          (query-type query)]
      (cond
        (= query-type "execSelect")
        (->CloseableResultSet query-execution (query* query-execution))
-       (or (= query-type "execDescribeTriples") (= query-type "execConstructTriples"))
+       (or (= query-type "execDescribeTriples")
+           (= query-type "execConstructTriples"))
        (->CloseableModel query-execution (query* query-execution))
        :else
        (try (query* query-execution)
-            (finally (.close query-execution)))))))
+            (finally (.close ^QueryExecution query-execution)))))))
 
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
-  (UpdateExecutionFactory/createRemote update ^String connection))
+  (UpdateExecutionFactory/createRemote ^UpdateRequest update ^String connection))
 (defmethod update-exec Dataset [connection update]
-  (UpdateExecutionFactory/create update ^Dataset connection))
-(defmethod update-exec DatasetGraph [connection update]
-  (UpdateExecutionFactory/create update ^DatasetGraph connection))
-
+  (UpdateExecutionFactory/create ^UpdateRequest update ^Dataset connection))
 
 (defn ^UpdateRequest as-update
   ([^String ustr]
@@ -400,22 +399,20 @@
   "Execute a SPARQL UPDATE `query` against the `connection`,
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
-  `connection` can be a String for a SPARQL endpoint URL or `Dataset`, or `DatasetGraph`.
+  `connection` can be a String for a SPARQL endpoint URL or `Dataset`.
 
   Returns nil on success, or throws an Exception. "
   ([connection
     ^PrefixMapping prefixes
     ^ParameterizedSparqlString pq
     options]
-   (update! connection prefixes default-syntax options))
+   (update! connection prefixes default-syntax pq options))
   ([connection
     ^PrefixMapping prefixes
     ^Syntax syntax
     ^ParameterizedSparqlString pq
     {:keys [bindings]}]
-   (let [ustr (.toString (query-with-bindings pq prefixes bindings))
-         ^UpdateRequest update-request
-         (as-update syntax ustr)
-         ^UpdateProcessor processor
-         (update-exec connection update-request)]
-     (.execute processor))))
+   (let [ustr (str (query-with-bindings pq prefixes bindings))
+         update-request (as-update syntax ustr)
+         processor (update-exec connection update-request)]
+     (.execute ^UpdateProcessor processor))))

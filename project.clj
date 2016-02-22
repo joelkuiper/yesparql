@@ -16,8 +16,6 @@
              :1.8 {:dependencies [[org.clojure/clojure "1.8.0"]]}}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [instaparse "1.4.1"]
-
                  [org.apache.jena/jena-arq "3.0.1"]
-                 [org.apache.jena/jena-text "3.0.1"]
                  [org.apache.jena/jena-core "3.0.1"]
                  [org.apache.jena/jena-querybuilder "3.0.1"]])
