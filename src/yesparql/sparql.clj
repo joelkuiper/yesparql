@@ -176,10 +176,15 @@
         (if (map? resource)
           (.setLiteral pq ^String subs ^Literal (clj->literal resource))
           (condp instance? resource
-            URL (.setIri pq subs ^URL resource)
-            URI (.setIri pq subs ^String (.expandPrefix prefixes (str resource)))
-            Node (.setParam pq subs ^Node resource)
-            RDFNode (.setParam pq subs ^RDFNode resource)
+            URL
+            (.setIri pq subs ^URL resource)
+            URI
+            (.setIri pq subs ^String (.expandPrefix prefixes (str resource)))
+            Node
+            (.setParam pq subs ^Node resource)
+            RDFNode
+            (.setParam pq subs ^RDFNode resource)
+            ;; Default, uses reflection
             (.setLiteral pq subs resource)))))
     bindings))
   pq)
@@ -193,7 +198,9 @@
     {:type (.getLiteralDatatypeURI literal)
      :value (f literal)}))
 
-(defmulti node->clj (fn [^Node_Literal literal] (.getLiteralDatatypeURI literal)))
+(defmulti node->clj
+  (fn [^Node_Literal literal]
+    (.getLiteralDatatypeURI literal)))
 
 (defmethod node->clj nil [^Node_Literal literal]
   {:value (.getLiteralValue literal)})
@@ -247,9 +254,8 @@
 
 (defn triple->clj
   [^org.apache.jena.graph.Triple t]
-  (apply
-   ->Triple
-   (map convert [(.getSubject t) (.getPredicate t) (.getObject t)])))
+  (apply ->Triple
+     (map convert [(.getSubject t) (.getPredicate t) (.getObject t)])))
 
 (defn statement->clj
   [^Statement s]
@@ -286,9 +292,7 @@
 
 (defmulti query-exec (fn [connection _] (class connection)))
 (defmethod query-exec String [connection query]
-  (QueryExecutionFactory/sparqlService
-   ^String connection
-   ^Query query))
+  (QueryExecutionFactory/sparqlService ^String connection ^Query query))
 
 (defmethod query-exec Dataset [connection query]
   (QueryExecutionFactory/create ^Query query ^Dataset connection))
@@ -321,7 +325,10 @@
    (QueryFactory/create qstr syntax)))
 
 (defn ->execution
-  [connection ^ParameterizedSparqlString pq ^Syntax syntax {:keys [bindings timeout]}]
+  [connection
+   ^ParameterizedSparqlString pq
+   ^Syntax syntax
+   {:keys [bindings timeout]}]
   (let [^String qstr (str pq)
         ^Query q (as-query syntax qstr)
         ^QueryExecution query-execution (query-exec connection q)]
@@ -385,9 +392,13 @@
 
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
-  (UpdateExecutionFactory/createRemote ^UpdateRequest update ^String connection))
+  (UpdateExecutionFactory/createRemote
+   ^UpdateRequest update
+   ^String connection))
 (defmethod update-exec Dataset [connection update]
-  (UpdateExecutionFactory/create ^UpdateRequest update ^Dataset connection))
+  (UpdateExecutionFactory/create
+   ^UpdateRequest update
+   ^Dataset connection))
 
 (defn ^UpdateRequest as-update
   ([^String ustr]
@@ -399,9 +410,7 @@
   "Execute a SPARQL UPDATE `query` against the `connection`,
   returning nil if success, throw an exception otherwise. `bindings`
   will be substituted when possible, can be empty.
-  `connection` can be a String for a SPARQL endpoint URL or `Dataset`.
-
-  Returns nil on success, or throws an Exception. "
+  `connection` can be a String for a SPARQL endpoint URL or `Dataset`."
   ([connection
     ^PrefixMapping prefixes
     ^ParameterizedSparqlString pq
