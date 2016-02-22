@@ -25,7 +25,7 @@
           :update sparql/update!
           :query sparql/query)
         ;; So this is a bit of a hack, but we convert the pq to
-        ;; A Query or UpdateRequest to extract the prefixes.
+        ;; a Query or UpdateRequest to extract the prefixes.
         ;; Bonus, this gives validation of sorts at generation time
         ^PrefixMapping prefix-mapping
         (case query-type

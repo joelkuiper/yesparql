@@ -15,6 +15,7 @@
    [org.apache.jena.query Dataset]
    [org.apache.jena.sparql.core DatasetGraph]
    [org.apache.jena.sparql.resultset RDFOutput]
+   [org.apache.jena.rdf.model ModelFactory]
    [org.apache.jena.graph Node Node_Literal Node_Blank Node_NULL Node_URI]
    [org.apache.jena.query
     Query QuerySolution QueryExecution Syntax
@@ -125,7 +126,8 @@
     (reset-if-rewindable! result)
     (.asModel rdf ^ResultSet result)))
 
-(def ^Model default-model (org.apache.jena.rdf.model.ModelFactory/createDefaultModel))
+(def ^Model default-model (ModelFactory/createDefaultModel))
+(def ^Syntax default-syntax Syntax/defaultSyntax)
 
 (defn keyword-str [kw] (if (keyword? kw) (name kw) kw))
 
@@ -264,7 +266,7 @@
   [^CloseableModel closeable-model]
   (with-open [model closeable-model]
     (let [^Model m
-          (org.apache.jena.rdf.model.ModelFactory/createDefaultModel)
+          (ModelFactory/createDefaultModel)
           ^java.util.List statements
           (java.util.ArrayList.
            (doall (map #(.asStatement m %) (iterator-seq (.t model)))))]
@@ -353,26 +355,31 @@
    WARNING: The underlying `QueryExecution` must be closed in order to
   prevent resources from leaking. Call the query in a `with-open` or
   close manually with `(.close (->query-execution (query)))`. "
-  [connection
-   ^PrefixMapping prefixes
-   ^Syntax syntax
-   ^ParameterizedSparqlString pq
-   {:keys [bindings timeout] :as call-options}]
-  (let [pq (query-with-bindings pq prefixes bindings)
-        query-execution
-        (->execution connection pq syntax call-options)
-        query
-        (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
-        query-type
-        (query-type query)]
-    (cond
-      (= query-type "execSelect")
-      (->CloseableResultSet query-execution (query* query-execution))
-      (or (= query-type "execDescribeTriples") (= query-type "execConstructTriples"))
-      (->CloseableModel query-execution (query* query-execution))
-      :else
-      (try (query* query-execution)
-           (finally (.close query-execution))))))
+  ([connection
+    ^PrefixMapping prefixes
+    ^ParameterizedSparqlString pq
+    options]
+   (query connection prefixes default-syntax pq options))
+  ([connection
+    ^PrefixMapping prefixes
+    ^Syntax syntax
+    ^ParameterizedSparqlString pq
+    {:keys [bindings timeout] :as call-options}]
+   (let [pq (query-with-bindings pq prefixes bindings)
+         query-execution
+         (->execution connection pq syntax call-options)
+         query
+         (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
+         query-type
+         (query-type query)]
+     (cond
+       (= query-type "execSelect")
+       (->CloseableResultSet query-execution (query* query-execution))
+       (or (= query-type "execDescribeTriples") (= query-type "execConstructTriples"))
+       (->CloseableModel query-execution (query* query-execution))
+       :else
+       (try (query* query-execution)
+            (finally (.close query-execution)))))))
 
 (defmulti update-exec (fn [connection _] (class connection)))
 (defmethod update-exec String [connection update]
@@ -396,14 +403,19 @@
   `connection` can be a String for a SPARQL endpoint URL or `Dataset`, or `DatasetGraph`.
 
   Returns nil on success, or throws an Exception. "
-  [connection
-   ^PrefixMapping prefixes
-   ^Syntax syntax
-   ^ParameterizedSparqlString pq
-   {:keys [bindings]}]
-  (let [ustr (.toString (query-with-bindings pq prefixes bindings))
-        ^UpdateRequest update-request
-        (as-update syntax ustr)
-        ^UpdateProcessor processor
-        (update-exec connection update-request)]
-    (.execute processor)))
+  ([connection
+    ^PrefixMapping prefixes
+    ^ParameterizedSparqlString pq
+    options]
+   (update! connection prefixes default-syntax options))
+  ([connection
+    ^PrefixMapping prefixes
+    ^Syntax syntax
+    ^ParameterizedSparqlString pq
+    {:keys [bindings]}]
+   (let [ustr (.toString (query-with-bindings pq prefixes bindings))
+         ^UpdateRequest update-request
+         (as-update syntax ustr)
+         ^UpdateProcessor processor
+         (update-exec connection update-request)]
+     (.execute processor))))
