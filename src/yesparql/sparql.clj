@@ -165,10 +165,9 @@
               (integer? var) (int var)
               :else
               (throw (java.lang.IllegalArgumentException.
-                      "ParameterizedSparqlString binding keys must be strings, keywords or integers")))]
+                      "ParameterizedSparqlString binding keys must be strings, keywords or integers.")))]
         (if (map? resource)
           (.setLiteral pq subs (clj->literal resource))
-
           (condp instance? resource
             URL (.setIri pq subs ^URL resource)
             URI (.setIri pq subs ^String (.expandPrefix prefixes (str resource)))
@@ -241,7 +240,9 @@
 
 (defn triple->clj
   [^org.apache.jena.graph.Triple t]
-  (apply ->Triple (map convert [(.getSubject t) (.getPredicate t) (.getObject t)])))
+  (apply
+   ->Triple
+   (map convert [(.getSubject t) (.getPredicate t) (.getObject t)])))
 
 (defn statement->clj
   [^Statement s]
@@ -355,7 +356,10 @@
    WARNING: The underlying `QueryExecution` must be closed in order to
   prevent resources from leaking. Call the query in a `with-open` or
   close manually with `(.close (->query-execution (query)))`. "
-  [connection ^PrefixMapping prefixes ^ParameterizedSparqlString pq {:keys [bindings timeout] :as call-options}]
+  [connection
+   ^PrefixMapping prefixes
+   ^ParameterizedSparqlString pq
+   {:keys [bindings timeout] :as call-options}]
   (let [query-execution
         (->execution connection (query-with-bindings pq prefixes bindings) call-options)
         query
@@ -386,7 +390,10 @@
   `connection` can be a String for a SPARQL endpoint URL or `Dataset`, or `DatasetGraph`.
 
   Returns nil on success, or throws an Exception. "
-  [connection ^PrefixMapping prefixes ^ParameterizedSparqlString pq {:keys [bindings]}]
+  [connection
+   ^PrefixMapping prefixes
+   ^ParameterizedSparqlString pq
+   {:keys [bindings]}]
   (let [^UpdateRequest update-request
         (.asUpdate (query-with-bindings pq prefixes bindings))
         ^UpdateProcessor processor
