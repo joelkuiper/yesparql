@@ -1,4 +1,4 @@
-(defproject yesparql "0.2.3"
+(defproject yesparql "0.3.0"
   :description "YeSPARQL, a Yesql inspired SPARQL library"
   :url "http://github.com/joelkuiper/yesparql"
   :license {:name "Eclipse Public License"
