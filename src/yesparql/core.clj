@@ -14,18 +14,18 @@
    (defqueries filename {}))
   ([filename options]
    (doall (->> filename
-             slurp-from-classpath
-             parse-tagged-queries
-             (map #(generate-var % options))))))
+               slurp-from-classpath
+               parse-tagged-queries
+               (map #(generate-var (assoc % :filename filename) options))))))
 
 (defn defquery*
   [name filename options]
   ;;; TODO Now that we have a better parser, this is a somewhat suspicious way of writing this code.
   (doall (->> filename
-            slurp-from-classpath
-            (format "-- name: %s\n%s" name)
-            parse-tagged-queries
-            (map #(generate-var % options)))))
+              slurp-from-classpath
+              (format "-- name: %s\n%s" name)
+              parse-tagged-queries
+              (map #(generate-var (assoc % :filename filename) options)))))
 
 ;;; defquery is a macro solely because of the unquoted symbol it accepts
 ;;; as its first argument. It is tempting to deprecate defquery. There

@@ -14,7 +14,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.2.3"]
+[yesparql "0.3.0"]
 ```
 
 ## What's the point?
@@ -44,6 +44,7 @@ Create an SPARQL query and save it as a file.
 
 PREFIX dbpedia-owl: <http://dbpedia.org/ontology/>
 PREFIX dct: <http://purl.org/dc/terms/>
+PREFIX category: <http://dbpedia.org/resource/Category:>
 
 SELECT DISTINCT ?person {
     { ?person a dbpedia-owl:Scientist }
@@ -56,6 +57,7 @@ SELECT DISTINCT ?person {
 ```
 
 Make sure it's on the classpath. For this example, it's in `src/some/where/`.
+The [syntax](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/query/Syntax.html) of the query is automatically guessed at using the filename, and currently defaults to [SPARQL 1.1](https://www.w3.org/TR/sparql11-overview/).
 
 ```clojure
 (require '[yesparql.core :refer [defquery]])
@@ -82,8 +84,8 @@ Make sure it's on the classpath. For this example, it's in `src/some/where/`.
   (do-something-with-result! result))
 ```
 
-You can supply bindings as a map of strings (the names) or integers (positional arguments) to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
-Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}` which will be coerced to the appropriate `Literal` automatically.
+You can supply bindings as a map of strings (the names) or keywords to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
+Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}` which will be coerced to the appropriate `Literal` automatically. Prefixes that were defined in the query get automatically resolved when passing in an `URI`.
 
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 
@@ -99,8 +101,8 @@ user> (with-open
          (select-intellectuals
           {:limit 10
            :bindings
-           {"subject"
-            (java.net.URI. "http://dbpedia.org/resource/Category:1952_deaths")}})]
+           {:subject
+            (java.net.URI. "category:1952_deaths")}})]
         (into [] result))
 
 ;=> [{"person" "http://dbpedia.org/resource/Antonio_Damasio"}
@@ -247,7 +249,7 @@ Instead do:
 In general make sure you do any and all work you want to do on the results *eagerly* in the `with-open`.
 
 ## TODO
-- TDB Text API (with Lucene)
+- Transactional support
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 
@@ -272,7 +274,7 @@ This software was commissioned and sponsored by [Doctor Evidence](http://doctore
 
 ## License
 
-Copyright © 2015 Joel Kuiper
+Copyright © 2015-2016 Joel Kuiper
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
