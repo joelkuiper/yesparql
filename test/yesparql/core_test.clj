@@ -1,9 +1,10 @@
 (ns yesparql.core-test
   (:import [java.net URI URL URLEncoder])
-  (:require [clojure.string :refer [upper-case]]
+  (:require [clojure.string :refer [upper-case trim-newline]]
             [expectations :refer :all]
             [clojure.java.io :as io]
             [yesparql.tdb :as tdb]
+            [yesparql.util :as yu]
             [yesparql.sparql :refer :all]
             [yesparql.core :refer :all]))
 
@@ -57,25 +58,26 @@
  (into [] (map #(into {} %) (construct-books)))) ; returns yesparql.sparql.Triple
 
 ;; Test conversion
-(def model-ttl
-  "@prefix rs:    <http://www.w3.org/2001/sw/DataAccess/tests/result-set#> .\n@prefix rdf:   <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .\n@prefix xsd:   <http://www.w3.org/2001/XMLSchema#> .\n\n[ a                  rs:ResultSet ;\n  rs:resultVariable  \"object\" , \"predicate\" , \"subject\" ;\n  rs:size            \"4\"^^xsd:int ;\n  rs:solution        [ rs:binding  [ rs:value     \"A third book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book3> ;\n                          rs:variable  \"subject\"\n                        ] ] ;\n  rs:solution        [ rs:binding  [ rs:value     \"A second book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book2> ;\n                          rs:variable  \"subject\"\n                        ] ] ;\n  rs:solution        [ rs:binding  [ rs:value     \"A new book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book1> ;\n                          rs:variable  \"subject\"\n                        ] ] ;\n  rs:solution        [ rs:binding  [ rs:value     \"A default book\" ;\n                                     rs:variable  \"object\"\n                                   ] ;\n            rs:binding  [ rs:value     <http://purl.org/dc/elements/1.1/title> ;\n                          rs:variable  \"predicate\"\n                        ] ;\n            rs:binding  [ rs:value     <http://example/book0> ;\n                          rs:variable  \"subject\"\n                        ] ]\n] .\n")
+(def model-ttl (trim-newline (yu/slurp-from-classpath "yesparql/output/model.ttl")))
 
-(expect model-ttl (model->ttl (result->model (->result (select-all)))))
+(expect model-ttl (trim-newline (model->ttl (result->model (->result (select-all))))))
 
 (expect model-ttl
         (with-open [out (java.io.ByteArrayOutputStream.)]
-          (.toString
-           (model->ttl (result->model (->result (select-all))) out) "UTF-8")))
+          (trim-newline
+           (.toString
+            (model->ttl (result->model (->result (select-all))) out) "UTF-8"))))
 
 (expect true (not (nil? (result->xml (->result (select-all))))))
 
-(def json-result "{\n  \"head\": {\n    \"vars\": [ \"subject\" , \"predicate\" , \"object\" ]\n  } ,\n  \"results\": {\n    \"bindings\": [\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book0\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A default book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book1\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A new book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book2\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A second book\" }\n      } ,\n      {\n        \"subject\": { \"type\": \"uri\" , \"value\": \"http://example/book3\" } ,\n        \"predicate\": { \"type\": \"uri\" , \"value\": \"http://purl.org/dc/elements/1.1/title\" } ,\n        \"object\": { \"type\": \"literal\" , \"value\": \"A third book\" }\n      }\n    ]\n  }\n}\n")
+(def json-result (trim-newline (yu/slurp-from-classpath "yesparql/output/result.json")))
 
-(expect json-result (result->json (->result (select-all))))
+(expect json-result (trim-newline (result->json (->result (select-all)))))
 
 (expect json-result
         (with-open [out (java.io.ByteArrayOutputStream.)]
-          (.toString (result->json (->result (select-all)) out) "UTF-8")))
+          (trim-newline
+           (.toString (result->json (->result (select-all)) out) "UTF-8"))))
 
 (defquery select-book
   "yesparql/samples/select-bindings.sparql"
@@ -171,7 +173,7 @@
  (into [] (select-all {:limit 2 :offset 1})))
 
 
-(defquery with-arq "yesparql/samples/path.sparql"
+(defquery with-arq "yesparql/samples/path.arq"
   {:connection "http://dbpedia.org/sparql"})
 
 (expect 5 (count (into [] (with-arq))))

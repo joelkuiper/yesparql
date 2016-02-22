@@ -1,0 +1,29 @@
+{
+  "head": {
+    "vars": [ "subject" , "predicate" , "object" ]
+  } ,
+  "results": {
+    "bindings": [
+      {
+        "subject": { "type": "uri" , "value": "http://example/book0" } ,
+        "predicate": { "type": "uri" , "value": "http://purl.org/dc/elements/1.1/title" } ,
+        "object": { "type": "literal" , "value": "A default book" }
+      } ,
+      {
+        "subject": { "type": "uri" , "value": "http://example/book1" } ,
+        "predicate": { "type": "uri" , "value": "http://purl.org/dc/elements/1.1/title" } ,
+        "object": { "type": "literal" , "value": "A new book" }
+      } ,
+      {
+        "subject": { "type": "uri" , "value": "http://example/book2" } ,
+        "predicate": { "type": "uri" , "value": "http://purl.org/dc/elements/1.1/title" } ,
+        "object": { "type": "literal" , "value": "A second book" }
+      } ,
+      {
+        "subject": { "type": "uri" , "value": "http://example/book3" } ,
+        "predicate": { "type": "uri" , "value": "http://purl.org/dc/elements/1.1/title" } ,
+        "object": { "type": "literal" , "value": "A third book" }
+      }
+    ]
+  }
+}

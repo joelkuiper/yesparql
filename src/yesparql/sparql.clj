@@ -312,19 +312,16 @@
 (defmethod query* "execDescribeTriples" [^QueryExecution q-exec]
   (.execDescribeTriples q-exec))
 
-
-(def ^:dynamic *default-syntax* Syntax/syntaxARQ)
-
 (defn ^Query as-query
   ([^String qstr]
-   (as-query *default-syntax* qstr))
+   (as-query Syntax/defaultQuerySyntax qstr))
   ([^Syntax syntax ^String qstr]
    (QueryFactory/create qstr syntax)))
 
 (defn- ->execution
-  [connection ^ParameterizedSparqlString pq {:keys [bindings timeout]}]
+  [connection ^ParameterizedSparqlString pq ^Syntax syntax {:keys [bindings timeout]}]
   (let [^String qstr (.toString pq)
-        ^Query q (as-query qstr)
+        ^Query q (as-query syntax qstr)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
@@ -358,10 +355,12 @@
   close manually with `(.close (->query-execution (query)))`. "
   [connection
    ^PrefixMapping prefixes
+   ^Syntax syntax
    ^ParameterizedSparqlString pq
    {:keys [bindings timeout] :as call-options}]
-  (let [query-execution
-        (->execution connection (query-with-bindings pq prefixes bindings) call-options)
+  (let [pq (query-with-bindings pq prefixes bindings)
+        query-execution
+        (->execution connection pq syntax call-options)
         query
         (set-additional-fields (.getQuery ^QueryExecution query-execution) call-options)
         query-type
@@ -383,6 +382,13 @@
 (defmethod update-exec DatasetGraph [connection update]
   (UpdateExecutionFactory/create update ^DatasetGraph connection))
 
+
+(defn ^UpdateRequest as-update
+  ([^String ustr]
+   (as-update Syntax/defaultUpdateSyntax ustr))
+  ([^Syntax syntax ^String qstr]
+   (UpdateFactory/create qstr syntax)))
+
 (defn update!
   "Execute a SPARQL UPDATE `query` against the `connection`,
   returning nil if success, throw an exception otherwise. `bindings`
@@ -392,10 +398,12 @@
   Returns nil on success, or throws an Exception. "
   [connection
    ^PrefixMapping prefixes
+   ^Syntax syntax
    ^ParameterizedSparqlString pq
    {:keys [bindings]}]
-  (let [^UpdateRequest update-request
-        (.asUpdate (query-with-bindings pq prefixes bindings))
+  (let [ustr (.toString (query-with-bindings pq prefixes bindings))
+        ^UpdateRequest update-request
+        (as-update syntax ustr)
         ^UpdateProcessor processor
         (update-exec connection update-request)]
     (.execute processor)))

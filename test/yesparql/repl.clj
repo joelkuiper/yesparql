@@ -32,11 +32,3 @@
     (into [] result)))
 
 (clojure.pprint/print-table (dutch-mathematicians))
-
-
-;;; Scratch
-(def s (yesparql.util/slurp-from-classpath "yesparql/samples/select-intellectuals.sparql"))
-
-(def pq (parameterized-query s))
-
-(def q (.asQuery pq))
