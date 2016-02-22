@@ -249,7 +249,7 @@ Instead do:
 In general make sure you do any and all work you want to do on the results *eagerly* in the `with-open`.
 
 ## TODO
-- TDB Text API (with Lucene)
+- Transactional support
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 
