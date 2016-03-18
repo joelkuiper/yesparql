@@ -172,7 +172,8 @@
               (keyword? var) (name var)
               :else
               (throw (java.lang.IllegalArgumentException.
-                      "ParameterizedSparqlString binding keys must be strings, keywords or integers.")))]
+                      "ParameterizedSparqlString binding keys must be
+                      strings, keywords.")))]
         (if (map? resource)
           (.setLiteral pq ^String subs ^Literal (clj->literal resource))
           (condp instance? resource
