@@ -29,7 +29,7 @@
         ;; Bonus, this gives validation of sorts at generation time
         ^PrefixMapping prefix-mapping
         (case query-type
-          :update (PrefixMapping/Extended)
+          :update (PrefixMapping/Standard)
           :query (.getPrefixMapping (sparql/as-query syntax statement)))]
     (fn [connection call-options]
       (sparql-fn connection
