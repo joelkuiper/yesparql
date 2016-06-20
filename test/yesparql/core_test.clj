@@ -110,6 +110,12 @@
             (update-books-param! {:bindings {:title "an awesome new book"}})
             (triple-count (select-all))))
 
+(expect
+ [{"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "an awesome new book"},
+   "subject" "http://example/book5",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}]
+ (into [] (select-all {:limit 1 :offset 4})))
+
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select
   "yesparql/samples/remote-query.sparql"
