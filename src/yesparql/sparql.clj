@@ -1,5 +1,4 @@
 (ns yesparql.sparql
-  (:refer-clojure :exclude [update])
   (:import
    [java.lang.IllegalArgumentException]
    [java.net URL URI]
