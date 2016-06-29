@@ -1,0 +1,7 @@
+-- Simple update with some books
+
+PREFIX dc: <http://purl.org/dc/elements/1.1/>
+INSERT DATA
+{
+  <http://example/book5> dc:title ?title .
+}

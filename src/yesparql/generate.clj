@@ -6,7 +6,7 @@
    [yesparql.sparql :as sparql]
    [yesparql.types :refer [map->Query]])
   (:import [yesparql.types Query]
-           [org.apache.jena.shared PrefixMapping]
+           [org.apache.jena.shared PrefixMapping PrefixMapping$Factory]
            [org.apache.jena.query ParameterizedSparqlString Syntax]))
 
 (defn query-type
@@ -29,7 +29,7 @@
         ;; Bonus, this gives validation of sorts at generation time
         ^PrefixMapping prefix-mapping
         (case query-type
-          :update (.getPrefixMapping (sparql/as-update syntax statement))
+          :update (PrefixMapping/Standard)
           :query (.getPrefixMapping (sparql/as-query syntax statement)))]
     (fn [connection call-options]
       (sparql-fn connection

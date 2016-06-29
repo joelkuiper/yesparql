@@ -16,7 +16,6 @@
 
 (def tdb (tdb/create-in-memory))
 
-
 (defquery select-all
   "yesparql/samples/select.sparql"
   {:connection tdb})
@@ -41,6 +40,28 @@
             (triple-count (select-all))))
 
 (expect true (ask-book))
+
+;; Test with transactions
+(def tdb2 (tdb/create-in-memory))
+
+(defquery select-all*
+  "yesparql/samples/select.sparql"
+  {:connection tdb2})
+
+(defquery update-books*!
+  "yesparql/samples/update.sparql"
+  {:connection tdb2})
+
+
+(with-transaction tdb2 :write
+  (do
+    (expect 0
+            (triple-count (select-all*)))
+    (expect nil (update-books*!))
+    (expect 4
+            (triple-count (select-all*)))))
+
+
 
 (expect
  [{:s "http://example/book0",
@@ -103,6 +124,20 @@
    "predicate" "http://purl.org/dc/elements/1.1/title"}]
  (into [] (select-foo)))
 
+(defquery update-books-param!
+  "yesparql/samples/update-params.sparql"
+  {:connection tdb})
+
+(expect 5 (do
+            (update-books-param! {:bindings {:title "an awesome new book"}})
+            (triple-count (select-all))))
+
+(expect
+ [{"object" {:type "http://www.w3.org/2001/XMLSchema#string", :value "an awesome new book"},
+   "subject" "http://example/book5",
+   "predicate" "http://purl.org/dc/elements/1.1/title"}]
+ (into [] (select-all {:limit 1 :offset 4})))
+
 ;; Test remote SPARQL endpoints
 (defquery dbpedia-select
   "yesparql/samples/remote-query.sparql"
@@ -111,14 +146,14 @@
 (expect 10
         (triple-count
          (dbpedia-select
-          {:timeout 500
+          {:timeout 1500
            :bindings {"subject" (URI. "http://dbpedia.org/resource/Category:1952_deaths")}})))
 
 ;; Same thing but with prefixed uri and keyword
 (expect 10
         (triple-count
          (dbpedia-select
-          {:timeout 500
+          {:timeout 1500
            :bindings {:subject (URI. "category:1952_deaths")}})))
 
 
@@ -136,21 +171,8 @@
   {:connection "http://dbpedia.org/sparql"
    :timeout 1500})
 
-(expect
- [{"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Ethiopia", :lang :en},
-   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 87952991}}
-  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Afghanistan", :lang :en},
-   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 31822848}}
-  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Uzbekistan", :lang :en},
-   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 30185000}}
-  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Burkina Faso", :lang :en},
-   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 17322796}}
-  {"country_name" {:type "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString", :value "Malawi", :lang :en},
-   "population" {:type "http://www.w3.org/2001/XMLSchema#integer", :value 16407000}}]
- (with-open [r (dbpedia-2)] (into [] r)))
-
 ;; Test limit
-(expect 4 (count (into [] (select-all))))
+(expect 5 (count (into [] (select-all))))
 (expect 3 (count (into [] (select-all {:limit 3}))))
 
 ;; Test offset
