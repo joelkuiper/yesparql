@@ -14,7 +14,7 @@ YeSPARQL is a library for executing [SPARQL](http://www.w3.org/TR/sparql11-query
 Add this to your [Leiningen](https://github.com/technomancy/leiningen) `:dependencies`:
 
 ``` clojure
-[yesparql "0.3.0"]
+[yesparql "0.3.1"]
 ```
 
 ## What's the point?
@@ -85,7 +85,7 @@ The [syntax](https://jena.apache.org/documentation/javadoc/arq/org/apache/jena/q
 ```
 
 You can supply bindings as a map of strings (the names) or keywords to [`URI`](https://docs.oracle.com/javase/7/docs/api/java/net/URI.html), `URL`, [`RDFNode`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/RDFNode.html), [`Node`](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/graph/Node.html), or [Literal](https://jena.apache.org/documentation/javadoc/jena/org/apache/jena/rdf/model/Literal.html) (default).
-Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}` which will be coerced to the appropriate `Literal` automatically. Prefixes that were defined in the query get automatically resolved when passing in an `URI`.
+Alternatively, you can supply a map of `{:type (optional, uri), :lang (optional, str or keyword), :value}` which will be coerced to the appropriate `Literal` automatically. Prefixes that were defined in the query get automatically resolved when passing in an `URI` for SPARQL QUERY, only common prefixes are resolved for SPARQL UPDATE.
 
 These bindings get inserted into the query using a [Parameterized SPARQL String](https://jena.apache.org/documentation/query/parameterized-sparql-strings.html).
 
@@ -248,8 +248,12 @@ Instead do:
 
 In general make sure you do any and all work you want to do on the results *eagerly* in the `with-open`.
 
+# A note on transactions
+When executing against TDB it is recommended to use [transactions](https://jena.apache.org/documentation/tdb/tdb_transactions.html)
+to prevent against data corruption.
+You can set the flags yourself on the `Dataset` or use the `with-transaction` macro, although support for this is somewhat lacking.
+
 ## TODO
-- Transactional support
 - Authentication support for SPARQL Endpoints
 - Support [SPARQL S-Expressions](https://jena.apache.org/documentation/notes/sse.html) (?)
 
