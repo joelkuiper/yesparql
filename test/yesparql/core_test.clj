@@ -41,6 +41,28 @@
 
 (expect true (ask-book))
 
+;; Test with transactions
+(def tdb2 (tdb/create-in-memory))
+
+(defquery select-all*
+  "yesparql/samples/select.sparql"
+  {:connection tdb2})
+
+(defquery update-books*!
+  "yesparql/samples/update.sparql"
+  {:connection tdb2})
+
+
+(with-transaction tdb2 :write
+  (do
+    (expect 0
+            (triple-count (select-all*)))
+    (expect nil (update-books*!))
+    (expect 4
+            (triple-count (select-all*)))))
+
+
+
 (expect
  [{:s "http://example/book0",
    :p "http://purl.org/dc/elements/1.1/title",

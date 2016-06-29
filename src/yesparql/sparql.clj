@@ -344,6 +344,29 @@
       (.setLimit query (long limit)))
     query))
 
+(defmacro with-transaction
+  [connection type & body]
+  (let [supports-transactions? (= (class connection) Dataset)]
+    (case type
+      :read
+      (if supports-transactions?
+        `(do
+           (.begin ~connection org.apache.jena.query.ReadWrite/READ)
+           ~@body
+           (.end ~connection))
+        `(do ~@body))
+
+      :write
+      (if supports-transactions?
+        `(do
+           (.begin ~connection org.apache.jena.query.ReadWrite/WRITE)
+           (try
+             (do
+               ~@body
+               (.commit ~connection))
+             (catch Exception e ((.abort ~connection) (throw e)))
+             (finally (.end ~connection))))
+        `(do ~@body)))))
 
 (defn query
   "Executes a SPARQL SELECT, ASK, DESCRIBE or CONSTRUCT based on the
