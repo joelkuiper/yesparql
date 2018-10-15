@@ -1,6 +1,6 @@
 (ns yesparql.sparql
   (:import
-   [java.lang.IllegalArgumentException]
+   [java.lang IllegalArgumentException]
    [java.net URL URI]
    [org.apache.jena.graph Node]
    [org.apache.jena.update
