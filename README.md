@@ -278,7 +278,7 @@ This software was commissioned and sponsored by [Doctor Evidence](http://doctore
 
 ## License
 
-Copyright © 2015-2016 Joel Kuiper
+Copyright © 2015-2018 Joël Kuiper
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
