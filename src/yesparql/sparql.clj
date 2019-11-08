@@ -324,25 +324,25 @@
   ([^Syntax syntax ^String qstr]
    (QueryFactory/create qstr syntax)))
 
+(defn set-additional-fields
+  [^Query query call-options]
+  (when-let [offset (:offset call-options)]
+    (.setOffset query (long offset)))
+  (when-let [limit (:limit call-options)]
+    (.setLimit query (long limit)))
+  nil)
+
 (defn ->execution
   [connection
    ^ParameterizedSparqlString pq
    ^Syntax syntax
-   {:keys [bindings timeout]}]
+   {:keys [bindings timeout] :as opts}]
   (let [^String qstr (str pq)
         ^Query q (as-query syntax qstr)
+        _ (set-additional-fields q opts)
         ^QueryExecution query-execution (query-exec connection q)]
     (when timeout (.setTimeout query-execution timeout))
     query-execution))
-
-(defn set-additional-fields
-  [^Query query call-options]
-  (do
-    (when-let [offset (:offset call-options)]
-      (.setOffset query (long offset)))
-    (when-let [limit (:limit call-options)]
-      (.setLimit query (long limit)))
-    query))
 
 (defmacro with-transaction
   [connection type & body]
@@ -398,11 +398,8 @@
    (let [pq (query-with-bindings pq prefixes bindings)
          query-execution
          (->execution connection pq syntax call-options)
-         query
-         (set-additional-fields
-          (.getQuery ^QueryExecution query-execution) call-options)
          query-type
-         (query-type query)]
+         (query-type (.getQuery ^QueryExecution query-execution))]
      (cond
        (= query-type "execSelect")
        (->CloseableResultSet query-execution (query* query-execution))
