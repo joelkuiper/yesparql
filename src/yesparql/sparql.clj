@@ -15,7 +15,7 @@
    [org.apache.jena.sparql.resultset RDFOutput]
    [org.apache.jena.rdf.model ModelFactory]
    [org.apache.jena.datatypes BaseDatatype]
-   [org.apache.jena.graph Node Node_Literal Node_Blank Node_NULL Node_URI]
+   [org.apache.jena.graph Node Node_Literal]
    [org.apache.jena.sparql.core Var ResultBinding]
    [org.apache.jena.query
     Query QuerySolution QueryExecution Syntax
@@ -220,8 +220,6 @@
   (convert [this] (.getBlankNodeId this))
   org.apache.jena.graph.Node_Literal
   (convert [this] (node->clj this))
-  org.apache.jena.graph.Node_NULL
-  (convert [this] nil)
   org.apache.jena.graph.Node_URI
   (convert [this] (.getURI this)))
 
