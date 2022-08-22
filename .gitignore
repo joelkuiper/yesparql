@@ -60,3 +60,6 @@ pom.xml.asc
 
 docs/
 !gitkeep
+
+.cpcache
+.calva

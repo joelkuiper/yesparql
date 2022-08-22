@@ -17,4 +17,4 @@
   "Creates a bare `DataSet` (without TDB)
    Recommended for testing purposes only"
   []
-  (DatasetFactory/createMem))
+  (DatasetFactory/createGeneral))

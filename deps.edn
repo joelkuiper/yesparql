@@ -1,0 +1,13 @@
+{:paths ["src" "resources"]
+ :deps
+ {cider/cider-nrepl {:mvn/version "0.25.9"}
+  instaparse/instaparse {:mvn/version "1.4.1"}
+  org.apache.jena/jena-core {:mvn/version "4.3.1"}
+  org.apache.jena/jena-arq {:mvn/version "4.3.1"}
+  org.apache.jena/jena-tdb {:mvn/version "4.3.1"}}
+ :aliases {:test {:extra-paths []
+                  :extra-deps
+                  {expectations/expectations {:mvn/version "2.1.3"}}}}
+ :mvn/repos {"central" {:url "https://repo1.maven.org/maven2/"}
+             "clojars" {:url "https://repo.clojars.org/"}
+             "oss-snapshots-repo" {:url "https://oss.sonatype.org/content/groups/public"}}}
